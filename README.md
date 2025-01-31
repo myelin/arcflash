@@ -4,6 +4,8 @@ A board that plugs into all Acorn Archimedes, A3000, A5000 (with adapter), and
 Risc PC (with adapter) machines, allowing OS updates without opening the
 machine -- or even powering it down!
 
+[Detailed design info](DESIGN.md)
+
 [Stardot thread](https://stardot.org.uk/forums/viewtopic.php?f=16&t=16043)
 
 Pictures
