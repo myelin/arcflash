@@ -21,3 +21,9 @@ For IC sockets, cut two 40-pin headers to make:
 - one 2x16-pin header and one 2x4-pin headers
 - four 5+4-pin headers and two 2-pin headers
 
+Note from my employer
+---------------------
+
+This is not an officially supported Google product. This project is not
+eligible for the [Google Open Source Software Vulnerability Rewards
+Program](https://bughunters.google.com/open-source-security).
