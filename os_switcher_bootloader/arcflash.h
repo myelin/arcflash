@@ -25,7 +25,7 @@
 #define STB_SPRINTF_NOUNALIGNED
 #define STB_SPRINTF_NOINT64
 #define STB_SPRINTF_NOFLOAT
-#include "../../third_party/stb/stb_sprintf.h"
+#include "../third_party/stb/stb_sprintf.h"
 
 // main.cc
 extern uint32_t _millis;

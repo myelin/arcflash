@@ -19,7 +19,7 @@ PART=xc95144xl-10-cs144
 # work fine timing wise.
 POWER=low
 
-SHARED_PATH ?= ../../common
+SHARED_PATH ?= ../common
 include ${SHARED_PATH}/Makefile.xilinx
 
 test2: test

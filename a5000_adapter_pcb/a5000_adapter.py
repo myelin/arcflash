@@ -28,7 +28,7 @@ PATH_TO_CPLD = "../cpld"
 
 import sys, os
 here = os.path.dirname(sys.argv[0])
-sys.path.insert(0, os.path.join(here, "../../third_party/myelin-kicad.pretty"))
+sys.path.insert(0, os.path.join(here, "../third_party/myelin-kicad.pretty"))
 import myelin_kicad_pcb
 Pin = myelin_kicad_pcb.Pin
 

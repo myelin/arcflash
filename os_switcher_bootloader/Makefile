@@ -26,7 +26,7 @@ SIZE = $(TOOLCHAIN_ROOT)/arm-none-eabi-size
 ASFLAGS = -k
 # c compiler: target ARM2, use 'mov pc, lr' rather than 'bx lr', skip c++
 # exceptions, don't include most of the clib, optimize, include nanopb
-CFLAGS = -mcpu=arm2 -mno-thumb-interwork -fno-exceptions -ffreestanding -O2 -I../../third_party/nanopb -DPB_FIELD_16BIT -DARCFLASH
+CFLAGS = -mcpu=arm2 -mno-thumb-interwork -fno-exceptions -ffreestanding -O2 -I../third_party/nanopb -DPB_FIELD_16BIT -DARCFLASH
 # don't include the standard library (which uses 'bx lr' everywhere)
 LDFLAGS = -nostdlib
 # this was in LDFLAGS, but doesn't appear necessary; did I pull in everything
@@ -38,15 +38,15 @@ LDFLAGS = -nostdlib
 default: all
 
 clean:
-	make -C ../../third_party/nanopb/generator/proto clean
-	rm -vf *_boot.bin *.elf *.list *.o *.rom *.pb *.pb.* ../../third_party/nanopb/*.o
+	make -C ../third_party/nanopb/generator/proto clean
+	rm -vf *_boot.bin *.elf *.list *.o *.rom *.pb *.pb.* ../third_party/nanopb/*.o
 
 all: arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootloader.bin
 
 %.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
-riscos_font.o: ../../third_party/riscos/riscos_font.s
+riscos_font.o: ../third_party/riscos/riscos_font.s
 	$(AS) -o $@ $<
 
 %.o: %.cc
@@ -65,22 +65,22 @@ riscos_font.o: ../../third_party/riscos/riscos_font.s
 cstartup.o: arcflash.pb.h
 
 # nanopb build step
-../../third_party/nanopb/generator/proto/nanopb_pb2.py: ../../third_party/nanopb/generator/proto/nanopb.proto
-	cd ../../third_party/nanopb/generator/proto; protoc --python_out=. nanopb.proto plugin.proto
+../third_party/nanopb/generator/proto/nanopb_pb2.py: ../third_party/nanopb/generator/proto/nanopb.proto
+	cd ../third_party/nanopb/generator/proto; protoc --python_out=. nanopb.proto plugin.proto
 
-arcflash.pb arcflash.pb.c arcflash.pb.h ../python_lib/arcflash/arcflash_pb2.py: arcflash.proto ../../third_party/nanopb/generator/proto/nanopb_pb2.py
+arcflash.pb arcflash.pb.c arcflash.pb.h ../python_lib/arcflash/arcflash_pb2.py: arcflash.proto ../third_party/nanopb/generator/proto/nanopb_pb2.py
 	protoc -o arcflash.pb --python_out=../python_lib/arcflash $<
-	python3 ../../third_party/nanopb/generator/nanopb_generator.py arcflash.pb
+	python3 ../third_party/nanopb/generator/nanopb_generator.py arcflash.pb
 
 SHARED_OBJS=cstartup.o \
 	arcflash.pb.o \
 	descriptor.o \
 	printf.o \
-	../../third_party/arm-trusted-firmware/arm32_aeabi_divmod.o \
-	../../third_party/arm-trusted-firmware/arm32_aeabi_divmod_a32.o \
-	../../third_party/arm-trusted-firmware/memcpy.o \
-	../../third_party/arm-trusted-firmware/memset.o \
-	../../third_party/nanopb/pb_common.o ../../third_party/nanopb/pb_encode.o ../../third_party/nanopb/pb_decode.o
+	../third_party/arm-trusted-firmware/arm32_aeabi_divmod.o \
+	../third_party/arm-trusted-firmware/arm32_aeabi_divmod_a32.o \
+	../third_party/arm-trusted-firmware/memcpy.o \
+	../third_party/arm-trusted-firmware/memset.o \
+	../third_party/nanopb/pb_common.o ../third_party/nanopb/pb_encode.o ../third_party/nanopb/pb_decode.o
 
 SWITCHER_OBJS=$(SHARED_OBJS) cmos.o display.o keyboard.o main.o riscos_font.o start.o
 

@@ -73,7 +73,7 @@ if not upload_port:
 print("Using %s as the upload port" % upload_port)
 
 # Copy xsvftool if necessary
-xsvf_path = "../../third_party/libxsvf"
+xsvf_path = "../third_party/libxsvf"
 xsvf_dest = "src/libxsvf"
 os.makedirs(xsvf_dest, exist_ok=True)
 for f in os.listdir(xsvf_path):

@@ -37,7 +37,7 @@ open(".gitignore", "w").writelines("%s\n" % x for x in sorted(ignore))
 if not os.path.exists("fp-lib-table"):
     with open("fp-lib-table", "w") as f:
         print("""(fp_lib_table
-  (lib (name myelin-kicad)(type Github)(uri https://github.com/myelin/myelin-kicad.pretty)(options allow_pretty_writing_to_this_dir=${KIPRJMOD}/../../third_party/myelin-kicad.pretty)(descr ""))
+  (lib (name myelin-kicad)(type Github)(uri https://github.com/myelin/myelin-kicad.pretty)(options allow_pretty_writing_to_this_dir=${KIPRJMOD}/../third_party/myelin-kicad.pretty)(descr ""))
 )""", file=f)
 
 # Create empty .pro if it doesn't exist
