@@ -12,16 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: build
-
-clean:
-	rm -rf uf2-samdx1 *.bin *.ino *.uf2
-
-uf2-samdx1:
-	git clone https://github.com/adafruit/uf2-samdx1.git
-	cp -a boards/* uf2-samdx1/boards/
-
-build: uf2-samdx1
-	(cd uf2-samdx1; make BOARD=myelin_arcflash)
-	rm -f *.bin *.ino *.uf2
-	cp uf2-samdx1/build/myelin_arcflash/{bootloader-*.bin,update-*.{ino,uf2}} ./
+CHIP_FAMILY = samd21
+CHIP_VARIANT = SAMD21E18A
