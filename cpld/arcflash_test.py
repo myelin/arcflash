@@ -75,10 +75,10 @@ async def spi_send(dut, spi_bytes):
 
 
 async def spi_flash_write(dut, addr, data):
-    resp = await spi_send(
+    await spi_send(
         dut,
         [
-            # 0, RnW, 22 address bits, 40 zeroes.
+            # 0, RnW, 22 address bits, 32 data bits, 8 zeroes.
             (addr & 0x3F0000) >> 16,
             (addr & 0xFF00) >> 8,
             addr & 0xFF,
@@ -189,3 +189,39 @@ async def read_from_flash(dut):
         read_resp,
         test_word,
     )
+
+
+async def catch_flash_write(dut):
+    await FallingEdge(dut.flash_nWE)
+    dut._log.info("spotted a flash write: addr %08X data %04X %04X",
+                  dut.flash_A.value,
+                  dut.flash1_DQ.value,
+                  dut.flash0_DQ.value,)
+    return (dut.flash_A.value, (dut.flash1_DQ.value << 16) | dut.flash0_DQ.value)
+
+
+@cocotb.test()
+async def write_to_flash(dut):
+    """Write a word to flash."""
+
+    init(dut)
+
+    write_catcher = await cocotb.start(catch_flash_write(dut))
+
+    # Write command: 0, 0, 22 address bits, 32 data bits, 8 zeroes.
+    test_addr = 0x3ABCDE
+    test_word = 0x12345678
+    await spi_flash_write(dut, test_addr, test_word)
+    assert (
+        dut.allowing_arm_access.value == 0
+    ), "Flash write should leave ARM access disabled"
+
+    await write_catcher.join()
+    A, D = write_catcher.result()
+    assert A == test_addr, "Flash write has wrong address %X (expected %X)" % (A, test_addr)
+    assert D == test_word, "Flash write has wrong data %X (expected %X)" % (D, test_word)
+
+
+"""Enable the serial port, and read/write from both sides."""
+
+"""Disable the serial port, and make sure it's unmapped."""
