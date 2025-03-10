@@ -74,6 +74,7 @@ wire host_output_enable;
 assign host_output_enable = use_output_enable_signal_from_host ? rom_nOE : 1'b0;
 
 // set to 1 once the power signal has been wired to rom_5V
+// TODO decide if we need this, seeing as rom_5V is flaky anyway and we might just require host power.
 parameter use_power_signal_from_host = 1;
 wire host_power_on;
 assign host_power_on = use_power_signal_from_host ? rom_5V : 1'b1;
