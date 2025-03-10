@@ -25,6 +25,24 @@ def tick():
     return Timer(1, units="ns")
 
 
+async def wait_one_clock_cycle(dut):
+    dut.cpld_clock_from_mcu.value = 0
+    await tick()
+    dut.cpld_clock_from_mcu.value = 1
+    await tick()
+
+
+async def drop_rom_nCS_and_wait_to_settle(dut):
+    # Set rom_nCS high for a few clock cycles.
+    dut.rom_nCS.value = 1
+    for i in range(1):
+        await wait_one_clock_cycle(dut)
+    # Drop rom_nCS and wait for enough cpld_clock_from_mcu cycles.
+    dut.rom_nCS.value = 0
+    for i in range(9):
+        await wait_one_clock_cycle(dut)
+
+
 def fmt_byte_array(data):
     return " ".join("%02X" % c for c in data)
 
@@ -193,10 +211,12 @@ async def read_from_flash(dut):
 
 async def catch_flash_write(dut):
     await FallingEdge(dut.flash_nWE)
-    dut._log.info("spotted a flash write: addr %08X data %04X %04X",
-                  dut.flash_A.value,
-                  dut.flash1_DQ.value,
-                  dut.flash0_DQ.value,)
+    dut._log.info(
+        "spotted a flash write: addr %08X data %04X %04X",
+        dut.flash_A.value,
+        dut.flash1_DQ.value,
+        dut.flash0_DQ.value,
+    )
     return (dut.flash_A.value, (dut.flash1_DQ.value << 16) | dut.flash0_DQ.value)
 
 
@@ -218,10 +238,101 @@ async def write_to_flash(dut):
 
     await write_catcher.join()
     A, D = write_catcher.result()
-    assert A == test_addr, "Flash write has wrong address %X (expected %X)" % (A, test_addr)
-    assert D == test_word, "Flash write has wrong data %X (expected %X)" % (D, test_word)
+    assert A == test_addr, "Flash write has wrong address %X (expected %X)" % (
+        A,
+        test_addr,
+    )
+    assert D == test_word, "Flash write has wrong data %X (expected %X)" % (
+        D,
+        test_word,
+    )
 
 
-"""Enable the serial port, and read/write from both sides."""
+@cocotb.test()
+async def test_bitbang_serial_writes_from_arm(dut):
+    """Test that the ARM can write to the serial port when enabled."""
 
-"""Disable the serial port, and make sure it's unmapped."""
+    init(dut)
+
+    # In between ROM accesses, rom_nCS is high.
+    dut.rom_nCS.value = 1
+
+    # First enable ARM access so we can access the serial port memory region
+    await spi_send(dut, [0xFF, 0xFF, 0xFF, 0xFF])
+    assert dut.allowing_arm_access.value == 1, "Failed to enable ARM access"
+
+    # Make sure the serial port is enabled.
+    dut.cpld_SS.value = 1  # disable SPI
+    await spi_send(dut, [0x80, 0x00, 0x00, 0x00])
+    assert dut.disable_serial_port.value == 0, "Failed to enable serial port"
+    assert dut.allowing_arm_access.value == 1, "ARM access should still be enabled"
+
+    # Test setting TXD to 1
+    dut.rom_A.value = 0xFFFFD  # A[1:0] = 01
+    await drop_rom_nCS_and_wait_to_settle(dut)
+    assert dut.cpld_MISO_TXD.value == 1, "Failed to set TXD to 1"
+    assert dut.cpld_MISO.value == 1, "Failed to set cpld_MISO to 1"
+
+    # Test setting TXD to 0
+    dut.rom_A.value = 0xFFFFC  # A[1:0] = 00
+    await drop_rom_nCS_and_wait_to_settle(dut)
+    assert dut.cpld_MISO_TXD.value == 0, "Failed to set TXD to 0"
+    assert dut.cpld_MISO.value == 0, "Failed to set cpld_MISO to 0"
+
+    # Verify that when cpld_SS is low, cpld_MISO follows cpld_MISO_int instead.
+    dut.cpld_SS.value = 0
+    dut.cpld_MISO_int.value = 0
+    await tick()
+    assert dut.cpld_MISO.value == 0, "cpld_SS == 0 should disable the serial port"
+    dut.cpld_MISO_int.value = 1
+    await tick()
+    assert dut.cpld_MISO.value == 1, "cpld_SS == 0 should disable the serial port"
+
+    dut.cpld_SS.value = 1
+    await tick()
+    assert dut.cpld_MISO.value == 0, "cpld_SS == 1 should re-enable the serial port"
+
+    # Test that disabling the serial port prevents writes to TXD.
+    await spi_send(dut, [0xC0, 0x00, 0x00, 0x00])  # Set disable_serial_port bit
+
+    # Try to change TXD (should have no effect now)
+    assert dut.cpld_MISO_TXD.value == 0, "cpld_MISO_TXD should still be 0"
+    dut.rom_A.value = 0xFFFFD  # Try to set TXD to 1
+    await drop_rom_nCS_and_wait_to_settle(dut)
+    assert (
+        dut.cpld_MISO_TXD.value == 0
+    ), "TXD value changed when serial port was disabled"
+
+
+@cocotb.test()
+async def test_bitbang_serial_writes_from_mcu(dut):
+    """Test that the MCU can write to the serial port when enabled."""
+
+    init(dut)
+
+    # Disable the serial port to start with.
+    await spi_send(dut, [0xC0, 0x00, 0x00, 0x00])
+    assert dut.disable_serial_port.value == 1, "Failed to disable serial port"
+
+    # Verify that reads to 0xFFFFF return flash_DQ.
+    for val in (0, 1):
+        dut.flash1_DQ.value = 0
+        dut.flash0_DQ.value = val
+        dut.rom_A.value = 0xFFFFF
+        await tick()
+        assert dut.rom_D.value == val, (
+            "ROM %d bit didn't pass through with disabled serial port" % val
+        )
+
+    # Enable the serial port.
+    await spi_send(dut, [0x80, 0x00, 0x00, 0x00])
+    assert dut.disable_serial_port.value == 0, "Failed to enable serial port"
+
+    # Verify that reads to 0xFFFFF return cpld_MOSI.
+    for val in (0, 1):
+        dut.cpld_MOSI.value = val
+        dut.rom_A.value = 0xFFFFF
+        await drop_rom_nCS_and_wait_to_settle(dut)
+        assert dut.rom_D.value == val, (
+            "ROM %d bit didn't pass through with enabled serial port" % val
+        )

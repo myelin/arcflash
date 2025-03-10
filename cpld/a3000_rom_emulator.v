@@ -138,6 +138,9 @@ reg writing_flash = 1'b0;
 // 1 to pass host accesses through to the flash, 0 to control flash from SPI
 reg allowing_arm_access = 1'b1;
 
+// 1 to disable the bitbanged serial port, i.e. don't mess with the last bytes of flash
+reg disable_serial_port = 1'b0;
+
 // 1 to use rom_A[19] (LA21) and provide 4MB of flash, 0 to ignore it and provide 2MB
 reg use_la21 = 1'b0;
 
@@ -153,9 +156,11 @@ reg [3:0] flash_bank = 4'b0;
 // 1 when rom_A is pointing at the top 16 bytes (4 words) of ROM
 wire accessing_signal_ROM;
 assign accessing_signal_ROM = (
-    rom_A[18:2] == 17'b11111111111111111
+    disable_serial_port == 1'b0
+    && rom_A[17:2] == 16'b1111111111111111  // steal more lower bits if this doesn't synthesize
+    && (use_la20 == 1'b0 || rom_A[18] == 1'b1)
     && (use_la21 == 1'b0 || rom_A[19] == 1'b1)
-  ) ? 1'b1 : 1'b0;  // TODO this can prob be 18:2==17'b1...1 because we only need 2 bits
+  ) ? 1'b1 : 1'b0;
 
 // synchronize mcu-to-arm signals when romcs goes active.
 // any metastability should settle by the time these values are read.
@@ -208,10 +213,11 @@ always @(posedge cpld_clock_from_mcu) begin
       // the point where MEMC might change its mind and
       // bring romcs* high again.
 
-      // see if rom_A is pointing at the last 2kB of ROM, i.e.
-      // the last 512 words.  rom_A[9:2] contain a data byte
-      // for us, and rom_A[10] is RnW.
+      // see if rom_A is pointing at the bitbang serial port
+      // area of ROM (the last few words).  if so, the lowest
+      // bit of the address is the new value for TXD.
       if (accessing_signal_ROM == 1'b1) begin
+        $display("Registered an access to the signal area of ROM");
         if (rom_A[1] == 1'b0) begin
           if (enable_comms) begin
             // ARM is writing data for the MCU
@@ -219,9 +225,11 @@ always @(posedge cpld_clock_from_mcu) begin
             arm_to_mcu_write_state <= !arm_to_mcu_write_state;
           end
           if (enable_bitbang_serial) begin
+            $display("Bitbang serial: Setting TXD to %d", rom_A[0]);
             cpld_MISO_TXD <= rom_A[0];
           end
         end else begin
+          $display("Bitbang serial: ARM is reading data from the MCU");
           if (enable_comms) begin
             // ARM is reading data from the MCU
             mcu_to_arm_read_state <= !mcu_to_arm_read_state;
@@ -316,7 +324,7 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
     if (sck_sync == 1'b1 && sck_last == 1'b0)
   `endif
   begin
-    // $display("\nSPI tick!  mosi=%d", cpld_MOSI);
+    // $display("SPI tick!  mosi=%d, spi_bit_count=%d", cpld_MOSI, spi_bit_count);
     // the master device should bring cpld_SS high between every transaction.
 
     // SPI is big-endian; send the MSB first and clock into the LSB.
@@ -343,15 +351,15 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
       allowing_arm_access <= cpld_MOSI;
       arm_to_mcu_write_state_sync <= arm_to_mcu_write_state;  // TODO use this
       mcu_to_arm_read_state_sync <= mcu_to_arm_read_state;  // TODO use this
-      // $display("SPI: Set allowing_arm_access to %d", cpld_MOSI);
+      $display("SPI: Set allowing_arm_access to %d", cpld_MOSI);
     end else if (allowing_arm_access == 1) begin
-      if (spi_bit_count < 8) begin
-        // allowing ARM access: rest of SPI transaction (one byte) is a control message
-        // bit 0-1: unused
+      if (spi_bit_count < 8) begin  // HACK probably don't need to check spi_bit_count here
+        // bit 0: allowing ARM access: rest of SPI transaction (one byte) is a control message
+        // bit 1: serial port disabled until reset (allow reading last few bytes of flash)
         // bit 2: use_la21
         // bit 3: use_la20
         // bit 4-7: flash_bank
-        {use_la21, use_la20, flash_bank} <= {use_la20, flash_bank, cpld_MOSI};
+        {disable_serial_port, use_la21, use_la20, flash_bank} <= {use_la21, use_la20, flash_bank, cpld_MOSI};
       end else if (spi_bit_count == 12) begin
         if (enable_comms) begin
           // mcu has data for me
@@ -379,6 +387,7 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
       // not allowing ARM access: rest of SPI transaction is a flash access request
       if (spi_bit_count == 1) begin
         spi_rnw <= cpld_MOSI;
+        $display("SPI: memory transaction, RnW=%d", cpld_MOSI);
       end else if (spi_bit_count < 24) begin  // 22 bit address in spi bits 2-23
         spi_A <= {spi_A[20:0], cpld_MOSI};
       end else if (spi_rnw == 1'b1) begin
@@ -390,6 +399,7 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
         end else if (spi_bit_count == 31) begin
           // end read
           spi_D <= {flash1_DQ, flash0_DQ};
+          $display("SPI: memory read; flash_DQ = %04X %04X", flash1_DQ, flash0_DQ);
           accessing_flash <= 1'b0;
         end else if (spi_bit_count >= 32) begin
           spi_D <= {spi_D[30:0], 1'b0};
@@ -401,6 +411,7 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
           spi_D <= {spi_D[30:0], cpld_MOSI};
         end
         if (spi_bit_count == 56) begin
+          $display("SPI: memory write; flash_DQ = %08X", spi_D);
           accessing_flash <= 1'b1;
         end
         if (spi_bit_count == 57) begin
