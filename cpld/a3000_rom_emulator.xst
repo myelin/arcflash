@@ -7,8 +7,8 @@ run
 -ofmt NGC
 -p xc9500xl
 -top a3000_rom_emulator
--opt_mode Speed
--opt_level 1
+-opt_mode Area
+-opt_level 2
 -iuc NO
 -keep_hierarchy Yes
 -netlist_hierarchy As_Optimized
