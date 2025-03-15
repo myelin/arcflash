@@ -6,5 +6,6 @@ Icon?
 *~
 .DS_Store
 cpld/out
+cpld_tmp
 gerber_tmp
 build-leonardo
