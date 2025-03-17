@@ -16,8 +16,8 @@ from arcflash.rombuild import *
 from glob import glob
 
 # Local paths on the author's machine
-classics, = glob("../../../archimedes/classicroms*/")
-rpcemu, = glob("../../../archimedes/rpcemu*/")
+classics, = glob("../../archimedes/classicroms*/")
+rpcemu, = glob("../../archimedes/rpcemu*/")
 
 FlashImage(
     roms=[
