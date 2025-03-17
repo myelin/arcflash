@@ -65,7 +65,6 @@ elif arcflash_port:
     upload_port = arcflash_port
 elif circuitplay_port:
     raise Exception("No Arcflash found, only a Circuit Playground Express.  Is this an Arcflash running the old bootloader?  Update the bootloader then try programming firmware again.")
-    upload_port = circuitplay_port
 
 if not upload_port:
     raise Exception("Could not find a connected Arcflash")
