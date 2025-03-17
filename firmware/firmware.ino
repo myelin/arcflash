@@ -210,12 +210,16 @@ uint32_t flash_read(uint32_t A) {
   return D;
 }
 
-// 7 bits: unused, previously reset_arm (0x40), use_la21 (0x20), use_la20 (0x10), bank:4
+// 7 bits: allowing_arm_access=1, disable_serial_port (0x40), use_la21 (0x20), use_la20 (0x10), bank:4
+#define ALLOWING_ARM_ACCESS 0x80
+#define DISABLE_SERIAL_PORT 0x40
+// Select bank size with use_la21 (>2M) and use_la20 (>1M)
 #define BANK_4M   0x30
 #define BANK_2M   0x10
 #define BANK_1M   0x00
-// TODO see if we can add in a use_la19 for 512k banks
+// Send zero to select 1M bank zero, for the graphical menu bootloader.
 #define SELECT_BOOTLOADER 0
+
 static uint8_t flash_bank_select_command =
     SELECT_BOOTLOADER;  // initial for Arc/RPC: bootloader bank, 1M
 //  0 | BANK_2M;  // A310 with RO3 and no bootloader
@@ -231,7 +235,7 @@ void flash_unlock() {
   // Reset allowing_arm_access to 1 in the CPLD, and update the bank
   // select settings if they have changed.
   CPLD_SS_CLEAR();
-  spi_transfer(0x80 | flash_bank_select_command);
+  spi_transfer(ALLOWING_ARM_ACCESS | flash_bank_select_command);
   CPLD_SS_SET();
 }
 
@@ -788,7 +792,7 @@ void loop() {
       if (bitbang_serial_have_star) {
         bitbang_serial_have_star = false;
         // Byte is a flash bank select command
-        select_flash_bank(c);
+        select_flash_bank(DISABLE_SERIAL_PORT | c);
         // Now reset the machine
         digitalWrite(ndrive_arc_RESET_PIN, LOW);
         delay(100);
