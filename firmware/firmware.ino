@@ -784,9 +784,9 @@ void loop() {
         Serial.println(c, HEX);
       }
 
-      static int bitbang_serial_have_star = 0;
+      static bool bitbang_serial_have_star = false;
       if (bitbang_serial_have_star) {
-        bitbang_serial_have_star = 0;
+        bitbang_serial_have_star = false;
         // Byte is a flash bank select command
         select_flash_bank(c);
         // Now reset the machine
@@ -794,7 +794,7 @@ void loop() {
         delay(100);
         digitalWrite(ndrive_arc_RESET_PIN, HIGH);
       } else if (c == '*') {
-        bitbang_serial_have_star = 1;
+        bitbang_serial_have_star = true;
       }
     }
   }
