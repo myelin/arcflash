@@ -14,6 +14,13 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+menu.cache=Cache
+menu.speed=CPU Speed
+menu.opt=Optimize
+menu.maxqspi=Max QSPI
+menu.usbstack=USB Stack
+menu.debug=Debug
+
 # Myelin Arcflash, based on Adafruit Circuit Playground M0
 # --------------------------------------------------------
 arcflash.name=Myelin Arcflash
@@ -21,7 +28,7 @@ arcflash.vid.0=0x1209
 arcflash.pid.0=0xFE07
 arcflash.vid.1=0x1209
 arcflash.pid.1=0xFE07
-arcflash.upload.tool=arduino:bossac
+arcflash.upload.tool=bossac18
 arcflash.upload.protocol=sam-ba
 arcflash.upload.maximum_size=262144
 arcflash.upload.offset=0x2000
@@ -34,15 +41,15 @@ arcflash.build.usb_product="Arcflash"
 arcflash.build.usb_manufacturer="Myelin"
 arcflash.build.board=SAMD_ARCFLASH
 arcflash.build.core=arduino
-arcflash.build.extra_flags=-DCRYSTALLESS -DARDUINO_SAMD_ZERO -D__SAMD21G18A__ -DARM_MATH_CM0PLUS {build.usb_flags} -DUSE_TINYUSB
+arcflash.build.extra_flags=-D__SAMD21G18A__ -DCRYSTALLESS -DARDUINO_SAMD_ZERO -DARM_MATH_CM0PLUS {build.usb_flags}
 arcflash.build.ldscript=linker_scripts/gcc/flash_with_bootloader.ld
-arcflash.build.openocdscript=openocd_scripts/circuit_play.cfg
+arcflash.build.openocdscript=scripts/openocd/daplink_samd21.cfg
 arcflash.build.variant=arcflash
 arcflash.build.variant_system_lib=
 arcflash.build.vid=0x1209
 arcflash.build.pid=0xFE07
 arcflash.bootloader.tool=arduino:openocd
-arcflash.bootloader.file=circuitplay/circuitplay_m0_samd21g18_sam_ba.bin
+arcflash.bootloader.file=circuitplayM0/bootloader-circuitplay_m0-v2.0.0-adafruit.5.bin
 arcflash.menu.opt.small=Small (-Os) (standard)
 arcflash.menu.opt.small.build.flags.optimize=-Os
 arcflash.menu.opt.fast=Fast (-O2)
@@ -53,6 +60,9 @@ arcflash.menu.opt.fastest=Fastest (-Ofast)
 arcflash.menu.opt.fastest.build.flags.optimize=-Ofast
 arcflash.menu.opt.dragons=Here be dragons (-Ofast -funroll-loops)
 arcflash.menu.opt.dragons.build.flags.optimize=-Ofast -funroll-loops
+arcflash.menu.usbstack.arduino=Arduino
+arcflash.menu.usbstack.tinyusb=TinyUSB
+arcflash.menu.usbstack.tinyusb.build.flags.usbstack=-DUSE_TINYUSB
 arcflash.menu.debug.off=Off
 arcflash.menu.debug.on=On
 arcflash.menu.debug.on.build.flags.debug=-g

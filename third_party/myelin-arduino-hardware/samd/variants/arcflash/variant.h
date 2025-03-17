@@ -31,16 +31,13 @@
 #define VARIANT_MAINOSC (32768ul)
 
 // Master clock frequency
-#define VARIANT_MCK     (48000000ul)
+#define VARIANT_MCK     (F_CPU)
 
 // Pins
 // ----
 
 // Number of pins defined in PinDescription array
-#ifdef __cplusplus
-extern "C" unsigned int PINCOUNT_fn();
-#endif
-#define PINS_COUNT           (PINCOUNT_fn())
+#define PINS_COUNT           (39u)
 #define NUM_DIGITAL_PINS     (39u)
 #define NUM_ANALOG_INPUTS    (11u)
 #define NUM_ANALOG_OUTPUTS   (1u)
@@ -54,7 +51,10 @@ extern "C" unsigned int PINCOUNT_fn();
 #define portInputRegister(port)  (&(port->IN.reg))
 #define portModeRegister(port)   (&(port->DIR.reg))
 #define digitalPinHasPWM(P)      (g_APinDescription[P].ulPWMChannel != NOT_ON_PWM || g_APinDescription[P].ulTCChannel != NOT_ON_TIMER)
-#define digitalPinToInterrupt(P) (g_APinDescription[P].ulExtInt)
+
+#if (ARDUINO_SAMD_VARIANT_COMPLIANCE < 10606)
+  #define digitalPinToInterrupt(P) (g_APinDescription[P].ulExtInt)
+#endif
 
 /*
  * digitalPinToTimer(..) is AVR-specific and is not defined for SAMD
@@ -182,13 +182,6 @@ extern Uart Serial1;
 #define PAD_SERIAL1_RX       (SERCOM_RX_PAD_1)
 #endif // __cplusplus
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-unsigned int PINCOUNT_fn();
-#ifdef __cplusplus
-}
-#endif
 
 
 // These serial port names are intended to allow libraries and architecture-neutral
@@ -206,10 +199,7 @@ unsigned int PINCOUNT_fn();
 //
 // SERIAL_PORT_HARDWARE_OPEN  Hardware serial ports which are open for use.  Their RX & TX
 //                            pins are NOT connected to anything by default.
-#define SERIAL_PORT_USBVIRTUAL      SerialUSB
-#define SERIAL_PORT_MONITOR         SerialUSB
+#define SERIAL_PORT_USBVIRTUAL      Serial
+#define SERIAL_PORT_MONITOR         Serial
 #define SERIAL_PORT_HARDWARE        Serial1
 #define SERIAL_PORT_HARDWARE_OPEN   Serial1
-
-// Alias Serial to SerialUSB
-#define Serial                      SerialUSB

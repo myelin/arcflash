@@ -4,3 +4,13 @@ libraries/libxsvf
 src/libxsvf
 crceconet.c
 checksum.h
+
+# Added by arduino-cli when installing the adafruit:samd core.
+/inventory.yaml
+/library_index.json
+/library_index.json.sig
+/package_adafruit_index.json
+/package_index.json
+/package_index.json.sig
+/packages
+/staging

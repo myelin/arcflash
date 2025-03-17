@@ -39,7 +39,7 @@ clean_first = os.environ.get("ARCFLASH_CACHE") != "1"
 arduino_cli = os.environ.get("ARDUINO_CLI", "arduino-cli")
 
 # std_args = "--verbose --fqbn arduino:samd:adafruit_circuitplayground_m0"
-std_args = "--verbose --fqbn myelin:samd:arcflash --config-file ./arduino-cli.json"
+std_args = "--verbose --fqbn myelin:samd:arcflash --config-dir ."
 
 # Figure out where the Arcflash is plugged in
 upload_port = arcflash_port = circuitplay_port = None
@@ -73,6 +73,8 @@ print("Using %s as the upload port" % upload_port)
 
 # Copy xsvftool if necessary
 xsvf_path = "../third_party/libxsvf"
+if not os.path.exists(f"{xsvf_path}/libxsvf.h"):
+    raise Exception("libxsvf files missing; did you run `git submodule update --init`?")
 xsvf_dest = "src/libxsvf"
 os.makedirs(xsvf_dest, exist_ok=True)
 for f in os.listdir(xsvf_path):
@@ -94,15 +96,16 @@ cmd("%s compile %s %s --libraries src --build-path %s" % (
     build_path,
 ))
 
+cmd(f"cp -v {build_path}/firmware.ino.bin ./")
+
 if upload_port == 'none':
     print("Skipping uploading as upload_port == none")
 else:
     # And upload to the Arcflash board
-    cmd("%s upload %s --port %s --input-dir %s" % (
+    cmd("%s upload %s --port %s --input-file firmware.ino.bin" % (
         arduino_cli,
         std_args,
         upload_port,
-        build_path,
     ))
 
     print("\n"

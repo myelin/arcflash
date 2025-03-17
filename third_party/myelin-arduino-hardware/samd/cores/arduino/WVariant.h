@@ -19,10 +19,6 @@
 
 #pragma once
 
-#ifdef __SAME51J19A__
-#include "same51j19a.h"
-#endif
-
 #include <stdint.h>
 #include "sam.h"
 #include <limits.h>
@@ -140,7 +136,7 @@ typedef enum _ETCChannel
   TC7_CH1 =  (12<<8)|(1),
 } ETCChannel ;
 
-#elif defined(__SAMD51P19A__) || defined(__SAMD51P20A__)
+#elif defined(__SAME53N20A__) || defined(__SAME53N19A__) || defined(__SAME54P20A__) || defined(__SAME54P19A__) || defined(__SAME54N20A__) || defined(__SAME54N19A__) || defined(__SAMD51P20A__) || defined(__SAMD51P19A__) || defined(__SAMD51N20A__) || defined(__SAMD51N19A__) || defined(__SAME51N20A__) || defined(__SAME51N19A__)
 
 typedef enum _ETCChannel
 {

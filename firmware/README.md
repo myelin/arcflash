@@ -6,13 +6,15 @@ It's built using the Arduino toolchain; originally using the Adafruit Circuit Pl
 
 To build and upload, you'll need to [install arduino-cli](https://arduino.github.io/arduino-cli/installation/).
 
+macOS: `brew install arduino-cli`
+
 Run `make upload` or `python3 build_and_upload.py` to build the code and upload it to a connected Arcflash board.
 
 If you see "Platform not installed" or "Error resolving FQBN" errors, update your cores:
 
 ~~~
 arduino-cli core update-index
-arduino-cli core install adafruit:samd
+arduino-cli --config-dir . core install adafruit:samd
 ~~~
 
 If you see linker errors ("Undefined reference to \`Uart::Uart(SERCOM\*, ...") on Windows, just rerun build_and_upload.py; this just seems to happen sometimes (?!)
