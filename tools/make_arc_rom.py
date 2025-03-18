@@ -82,7 +82,7 @@ FlashImage(
         ROM(
             tag="riscos320",
             name="RISC OS 3.20 (in development)",
-            files=[classics+'../arculator-src/hostfs/RO320/build/RO320,ffd'],
+            files=[classics+'sirbod-RO320-106'],
             size=_4M,
             cmos="riscos320",
             ),
