@@ -15,10 +15,14 @@
 # Arcflash ROM builder
 
 import hashlib
+import os
 import pkg_resources
 import struct
 import sys
 
+# Force pure-Python protobuf implementation, to avoid version mismatch
+# errors.
+os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
 from arcflash import arcflash_pb2
 from arcflash import uploader
 
