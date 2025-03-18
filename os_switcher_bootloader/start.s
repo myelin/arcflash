@@ -208,7 +208,7 @@ display_y .req r13  @ y position for plotting text
     adr r0, banner
     bl print_string
     b print_banner_done
-banner: .asciz "Arcflash - http://myelin.nz/arcflash"
+banner: .asciz "Arcflash - https://myelin.nz/arcflash"
     .align
 print_banner_done:
 
