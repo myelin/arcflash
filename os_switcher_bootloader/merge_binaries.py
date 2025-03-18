@@ -25,9 +25,11 @@ arc_boot = open("arc_boot.bin", "rb").read()
 rpc_boot = open("rpc_boot.bin", "rb").read()
 
 # Combine everything.  See README.md for details on memory map.
+print(f"Writing combined bootloader image to {output_fn}")
 f = open(output_fn, "wb")
 
 # Start with RISC OS
+print(f"Writing RISC OS binary at 0")
 f.write(risc_os)
 
 arc_offset = len(risc_os) + 8
@@ -36,15 +38,19 @@ rpc_offset = arc_offset + len(arc_boot)
 print("Arc bootloader at %08x, RPC bootloader at %08x" % (arc_offset, rpc_offset))
 
 # Offset of RPC bootloader
+print(f"Writing RPC bootloader offset at {f.tell()}")
 f.write(struct.pack("<i", rpc_offset))
 
 # Offset of Arc bootloader
+print(f"Writing Arc bootloader offset at {f.tell()}")
 f.write(struct.pack("<i", arc_offset))
 
 # Arc bootloader
+print(f"Writing Arc bootloader at {f.tell()}")
 f.write(arc_boot)
 
 # RPC bootloader
+print(f"Writing RPC bootloader at {f.tell()}")
 f.write(rpc_boot)
 
 total = f.tell()
