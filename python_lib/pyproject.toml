@@ -1,0 +1,44 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "arcflash"
+version = "0.1.4"
+authors = [
+    { name="Phillip Pearson", email="pp@myelin.nz" },
+]
+description = "Python support libraries for Arcflash flash ROM board for Acorn computers"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = [
+    "protobuf",
+    "PySerial",
+]
+
+[project.urls]
+Homepage = "https://github.com/myelin/arcflash/tree/main/python_lib"
+Issues = "https://github.com/myelin/arcflash/issues"
+
+[project.scripts]
+arcflash = "arcflash.main:main"
