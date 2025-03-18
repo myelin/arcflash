@@ -41,7 +41,10 @@ clean:
 	make -C ../third_party/nanopb/generator/proto clean
 	rm -vf *_boot.bin *.elf *.list *.o *.rom *.pb *.pb.* ../third_party/nanopb/*.o
 
-all: arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootloader.bin
+all: version arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootloader.bin
+
+version:
+	python3 make_version_h.py > version.h
 
 %.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<

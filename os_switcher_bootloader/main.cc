@@ -24,6 +24,7 @@
 // configure the ROM access timing.
 
 #include "arcflash.h"
+#include "version.h"
 
 #define BUF_SIZE 512
 uint32_t buf[BUF_SIZE];
@@ -361,6 +362,10 @@ extern "C" void main_program() {
       SCREEN[y * WIDTH + x] = c++;
     }
   }
+
+  // Print build date in the top right corner of the screen.
+  display_goto(WIDTH - 8 * 12, 8);
+  display_printf("%s", ARCFLASH_BUILD_DATE);
 
   display_goto(0, 40);
 

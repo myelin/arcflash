@@ -8,3 +8,4 @@
 *.pb
 *.pb.h
 *.pb.c
+version.h
