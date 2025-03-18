@@ -1015,6 +1015,7 @@ void loop() {
       default: {
         Serial.print("Unknown: ");
         Serial.println((char)c);
+        reset();
         break;
       }
     }
