@@ -22,8 +22,8 @@ OBJCOPY = $(TOOLCHAIN_ROOT)/arm-none-eabi-objcopy
 OBJDUMP = $(TOOLCHAIN_ROOT)/arm-none-eabi-objdump
 SIZE = $(TOOLCHAIN_ROOT)/arm-none-eabi-size
 
-# assembler: generate PIC code
-ASFLAGS = -k
+# assembler:
+ASFLAGS =
 # c compiler: target ARM2, use 'mov pc, lr' rather than 'bx lr', skip c++
 # exceptions, don't include most of the clib, optimize, include nanopb
 CFLAGS = -mcpu=arm2 -mno-thumb-interwork -fno-exceptions -ffreestanding -O2 -I../third_party/nanopb -DPB_FIELD_16BIT -DARCFLASH
