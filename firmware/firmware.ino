@@ -117,12 +117,17 @@ SPIClass cpld_spi(&sercom2, CPLD_MISO_PIN, CPLD_SCK_PIN, CPLD_MOSI_PIN, SPI_PAD_
 Uart cpld_uart(&sercom2, CPLD_MISO_PIN, CPLD_MOSI_PIN, SERCOM_RX_PAD_3, UART_TX_PAD_0);
 // to enable: cpld_uart.begin(); then same pinPeripheral calls as for SPI (because we're using the same sercom pins/pads, just a different function.)
 
-enum { NOTHING_SELECTED, SPI_SELECTED, UART_SELECTED } spi_port_state = NOTHING_SELECTED;
+enum class SpiPortState {
+  NOTHING_SELECTED,
+  SPI_SELECTED,
+  UART_SELECTED,
+};
+SpiPortState spi_port_state = SpiPortState::NOTHING_SELECTED;
 
 // Set MOSI/SCK/MISO/SS pins up for SPI comms with CPLD
 void select_spi() {
-  if (spi_port_state == SPI_SELECTED) return;
-  spi_port_state = SPI_SELECTED;
+  if (spi_port_state == SpiPortState::SPI_SELECTED) return;
+  spi_port_state = SpiPortState::SPI_SELECTED;
   if (Serial.dtr()) Serial.println("select spi");
   sercom2.disableSPI();  // disable SERCOM so we can write registers
   cpld_spi.begin();
@@ -134,8 +139,8 @@ void select_spi() {
 
 // Set MOSI/MISO pins up for UART comms with host machine (forwarded by CPLD)
 void select_uart() {
-  if (spi_port_state == UART_SELECTED) return;
-  spi_port_state = UART_SELECTED;
+  if (spi_port_state == SpiPortState::UART_SELECTED) return;
+  spi_port_state = SpiPortState::UART_SELECTED;
   if (Serial.dtr()) Serial.println("select uart");
   sercom2.disableSPI();  // disable SERCOM so we can write registers
   cpld_uart.begin(25000);  // This must match UART_BAUD in os_switcher_bootloader/main.cc.
