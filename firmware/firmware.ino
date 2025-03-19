@@ -138,7 +138,7 @@ void select_uart() {
   spi_port_state = UART_SELECTED;
   if (Serial.dtr()) Serial.println("select uart");
   sercom2.disableSPI();  // disable SERCOM so we can write registers
-  cpld_uart.begin(57600);
+  cpld_uart.begin(25000);  // This must match UART_BAUD in os_switcher_bootloader/main.cc.
   pinPeripheral(CPLD_MOSI_PIN, PIO_SERCOM_ALT);
   pinPeripheral(CPLD_MISO_PIN, PIO_SERCOM_ALT);
   // disable all interrupts that begin() enables

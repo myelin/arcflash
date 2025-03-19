@@ -67,7 +67,8 @@ static void setup_bitbang_uart(bool half_time) {
   // steve3000 on Stardot, IOC is always clocked at 8MHz on Archimedes
   // machines, so we can use IOC timers to set a consistent bit rate.
 
-#define UART_BAUD 57500
+  // This must match the value in select_uart() in firmware.ino.
+#define UART_BAUD 25000
   uint32_t uart_timer = 2000000L / UART_BAUD;
   // half_time is used when reading the start bit
   if (half_time == UART_HALF_BIT_TIME) uart_timer >>= 1;
@@ -93,57 +94,31 @@ void write_serial_byte(uint8_t c) {
   // our bit timings to that.
 
   setup_bitbang_uart(UART_FULL_BIT_TIME);
-  (void)*one;
-  uint32_t data = ((c & 0xff) | 0xf00) << 1;
-  IOC_CLEAR_TM1();
-  for (uint32_t i = 0; i < 11; ++i) {
-    while (!IOC_TM1);
+
+  // USART config on the MCU is 8N1: 1 start bit, 8 data bits, 1 stop bit.
+
+  // Bit 0: 1, line idle.
+  // Bit 1: 0, start bit.
+  // Bit 2-9: Data bits
+  // Bit 10: 1, stop bit.
+  // Bit 11: 1, extra stop bit.
+
+  // Data is sent LSB first, so right to left here.
+  // data = 1 <8 data bits> 01
+  uint32_t data = 0xc01 | (c << 2);
+
+  for (int i = 0; i < 11; ++i) {
+    // Reset timer and assert data bit
     IOC_CLEAR_TM1();
     if (data & 1) {
       (void)*one;
     } else {
       (void)*zero;
     }
+    // Wait for end of bit.
+    while (!IOC_TM1);
     data >>= 1;
   }
-
-  // Sadly, all this hand-coded assembly isn't nearly as good as what GCC
-  // produces with -O2!  Keeping it here for posterity.
-
-  // asm volatile (
-  //   "ldr r0, [%[one]]\n\t"  // make sure TX is high to begin with
-  //   "str %[ioc_irq_clear_tm1], [%[ioc_irq_clear]]\n\t"  // clear previous TM1 interrupt
-  //   // loop over 10 bits; r1 = loop counter
-  //   "mov r1, #0\n\t"
-  //   "serial_tx_loop:\n\t"
-  //   // sync with timer
-  //   "  serial_bit_wait:\n\t"
-  //   "    ldr r0, [%[ioc_irq_status_a]]\n\t"
-  //   "    ands r0, r0, %[ioc_irq_status_a_tm1]\n\t"
-  //   "    beq serial_bit_wait\n\t"
-  //   "   str %[ioc_irq_clear_tm1], [%[ioc_irq_clear]]\n\t"
-  //   // send zero or one depending on %[data] LSB
-  //   "  ands r0, %[data], #1\n\t"
-  //   "  ldreq r0, [%[zero]]\n\t"
-  //   "  ldrne r0, [%[one]]\n\t"
-  //   // next bit
-  //   "  lsr %[data], %[data], #1\n\t"
-  //   "  add r1, r1, #1\n\t"
-  //   "  cmp r1, #11\n\t"
-  //   "  blo serial_tx_loop\n\t"
-  //   : // outputs
-  //   : // inputs
-  //     [zero] "r" (zero),
-  //     [one] "r" (one),
-  //     [data] "r" (((c & 0xff) | 0xf00) << 1),  // {11111111, data[7:0], 0} = stop bit and buffer, data byte, start bit
-  //     [ioc_irq_clear] "r" (&IOC_IRQ_CLEAR),
-  //     [ioc_irq_status_a] "r" (&IOC_IRQ_STATUS_A),
-  //     [ioc_irq_status_a_tm1] "r" (IOC_IRQ_STATUS_A_TM1),
-  //     [ioc_irq_clear_tm1] "r" (IOC_IRQ_CLEAR_TM1)
-  //   : // clobbers
-  //     "r0",
-  //     "r1"
-  //   );
 }
 
 // Returns:
@@ -186,6 +161,7 @@ uint32_t read_serial_byte() {
 
   // Reset timer to full bit time
   setup_bitbang_uart(UART_FULL_BIT_TIME);
+  IOC_TIMER1_GO = 0;
 
   // Next timeout will be the middle of bit 0.  Read 9 bits, verify that the
   // last is a 1, then we have a byte.
