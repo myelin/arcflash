@@ -1,3 +1,5 @@
+default: build
+
 cleanbuild:
 	ARCFLASH_PORT=none python3 build_and_upload.py
 
