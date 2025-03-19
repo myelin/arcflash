@@ -46,6 +46,8 @@ all: version arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootloader.bin
 version:
 	python3 make_version_h.py > version.h
 
+main.o: version.h
+
 %.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
