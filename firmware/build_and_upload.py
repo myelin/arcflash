@@ -71,25 +71,31 @@ if not upload_port:
 
 print("Using %s as the upload port" % upload_port)
 
-# Copy xsvftool if necessary
+# Make sure we have the libxsvf submodule.
 xsvf_path = "../third_party/libxsvf"
 if not os.path.exists(f"{xsvf_path}/libxsvf.h"):
     raise Exception("libxsvf files missing; did you run `git submodule update --init`?")
-xsvf_dest = "src/libxsvf"
-os.makedirs(xsvf_dest, exist_ok=True)
-for f in os.listdir(xsvf_path):
-    if os.path.splitext(f)[1] not in (".c", ".cpp", ".h"): continue
-    if f in ("xsvftool-ft232h.c", "xsvftool-gpio.c"): continue
-    src = os.path.join(xsvf_path, f)
-    dest = os.path.join(xsvf_dest, f)
 
-    content = open(src).read()
-    if not os.path.exists(dest) or open(dest).read() != content:
-        open(dest, "w").write(content)
-        print("  %s -> %s" % (src, dest))
+# Copy libraries into here, so arduino-cli will build them.
+for src_dir, dest_dir in [
+    ("../host_mcu_comms", "lib/host_mcu_comms"),
+    ("../third_party/crc32", "lib/crc32"),
+    (xsvf_path, "lib/libxsvf"),
+]:
+    os.makedirs(dest_dir, exist_ok=True)
+    for f in os.listdir(src_dir):
+        if os.path.splitext(f)[1] not in (".c", ".cc", ".cpp", ".h"): continue
+        if f in ("xsvftool-ft232h.c", "xsvftool-gpio.c"): continue
+        src = os.path.join(src_dir, f)
+        dest = os.path.join(dest_dir, f)
+
+        content = open(src).read()
+        if not os.path.exists(dest) or open(dest).read() != content:
+            open(dest, "w").write(content)
+            print("  %s -> %s" % (src, dest))
 
 # Build it
-cmd("%s compile %s %s --libraries src --build-path %s" % (
+cmd("%s compile %s %s --libraries lib --build-path %s" % (
     arduino_cli,
     "--clean" if clean_first else "",
     std_args,

@@ -26,7 +26,7 @@ SIZE = $(TOOLCHAIN_ROOT)/arm-none-eabi-size
 ASFLAGS =
 # c compiler: target ARM2, use 'mov pc, lr' rather than 'bx lr', skip c++
 # exceptions, don't include most of the clib, optimize, include nanopb
-CFLAGS = -mcpu=arm2 -mno-thumb-interwork -fno-exceptions -ffreestanding -O2 -I../third_party/nanopb -DPB_FIELD_16BIT -DARCFLASH
+CFLAGS = -mcpu=arm2 -mno-thumb-interwork -fno-exceptions -ffreestanding -O2 -I../third_party/crc32 -I../third_party/nanopb -DPB_FIELD_16BIT -DARCFLASH
 # don't include the standard library (which uses 'bx lr' everywhere)
 LDFLAGS = -nostdlib
 # this was in LDFLAGS, but doesn't appear necessary; did I pull in everything
@@ -81,10 +81,12 @@ SHARED_OBJS=cstartup.o \
 	arcflash.pb.o \
 	descriptor.o \
 	printf.o \
+	../host_mcu_comms/host_mcu_comms.o \
 	../third_party/arm-trusted-firmware/arm32_aeabi_divmod.o \
 	../third_party/arm-trusted-firmware/arm32_aeabi_divmod_a32.o \
 	../third_party/arm-trusted-firmware/memcpy.o \
 	../third_party/arm-trusted-firmware/memset.o \
+	../third_party/crc32/crc32.o \
 	../third_party/nanopb/pb_common.o ../third_party/nanopb/pb_encode.o ../third_party/nanopb/pb_decode.o
 
 SWITCHER_OBJS=$(SHARED_OBJS) cmos.o display.o keyboard.o main.o riscos_font.o start.o

@@ -18,7 +18,10 @@
 #include "wiring_private.h"
 
 // For libxsvf, so we can program the CPLD
-#include "src/libxsvf/libxsvf.h"
+#include "libxsvf.h"
+
+// For comms with the host processor
+#include "host_mcu_comms.h"
 
 // This code is for the ATSAMD21E18A onboard an a3000_rom_emulator PCB.
 // Functions provided:
@@ -781,16 +784,15 @@ void loop() {
       if (Serial.dtr() && c != 0 && c != 0xFF) {
         Serial.print("frame error: ");
         Serial.println(c, HEX);
+        // TODO this should probably abort a packet in progress?
       }
     } else {
       // Process correctly-received char
       uint8_t c = sercom2.readDataUART();
-      if (Serial.dtr() &&
-          // TODO figure out why we sometimes get a nonstop stream of 0xFF.
-          // Setting the line high should result in idle, not this.
-          c != 0xFF) {
+      if (Serial.dtr()) {
         Serial.print("received: ");
         Serial.println(c, HEX);
+        host_mcu_comms::process_received_byte(c);
       }
 
       static bool bitbang_serial_have_star = false;
