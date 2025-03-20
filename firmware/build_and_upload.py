@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import shutil
 import subprocess
 import sys
 
@@ -82,6 +83,8 @@ for src_dir, dest_dir in [
     ("../third_party/crc32", "lib/crc32"),
     (xsvf_path, "lib/libxsvf"),
 ]:
+    if clean_first and os.path.exists(dest_dir):
+        shutil.rmtree(dest_dir)
     os.makedirs(dest_dir, exist_ok=True)
     for f in os.listdir(src_dir):
         if os.path.splitext(f)[1] not in (".c", ".cc", ".cpp", ".h"): continue
