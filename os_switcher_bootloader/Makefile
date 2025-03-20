@@ -93,15 +93,21 @@ SWITCHER_OBJS=$(SHARED_OBJS) cmos.o display.o keyboard.o main.o riscos_font.o st
 
 RPC_BOOT_OBJS=$(SHARED_OBJS) rpc_main.o rpc_start.o
 
+# Arc bootloader that runs from later in ROM, to make room for the Risc PC bootloader.
 arc_boot.elf: $(SWITCHER_OBJS)
+	@echo "--- BUILD ARCHIMEDES BOOTLOADER ---"
 	$(LD) $(CFLAGS) $(LDFLAGS) -Wl,--script=switcher.ld -Wl,-Map,arc_boot.map -o $@ $(SWITCHER_OBJS)
 	$(OBJDUMP) -S --disassemble arc_boot.elf > arc_boot.list
 
+# Standalone Arc bootloader that runs from the start of ROM.
 arc_boot_standalone.elf: $(SWITCHER_OBJS)
+	@echo "--- BUILD STANDALONE ARCHIMEDES BOOTLOADER ---"
 	$(LD) $(CFLAGS) $(LDFLAGS) -Wl,--script=switcher-at-zero.ld -Wl,-Map,arc_boot_standalone.map -o $@ $(SWITCHER_OBJS)
 	$(OBJDUMP) -S --disassemble arc_boot_standalone.elf > arc_boot_standalone.list
 
+# Risc PC bootloader.
 rpc_boot.elf: $(RPC_BOOT_OBJS)
+	@echo "--- BUILD RPC BOOTLOADER ---"
 	$(LD) $(CFLAGS) $(LDFLAGS) -Wl,--script=rpc_boot.ld -Wl,-Map,rpc_boot.map -o $@ $(RPC_BOOT_OBJS)
 	$(OBJDUMP) -S --disassemble rpc_boot.elf > rpc_boot.list
 
