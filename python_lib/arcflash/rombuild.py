@@ -233,6 +233,15 @@ def FlashImage(roms,
 
     if skip_bootloader:
         bootloader_bank = ''
+    elif bootloader_image_override:
+        # Bootloader image overridden -- ignore descriptor etc
+        print(f"Overriding usual bootloader; placing {bootloader_image_override} in the bootloader bank.")
+        bootloader_binary = open(bootloader_image_override, "rb").read()
+        # bootloader_binary = switch_byte_order(bootloader_binary, byte_order)
+        bootloader_bank = (
+            bootloader_binary +
+            (b"\xff" * (bootloader_bank_size - len(bootloader_binary)))
+        )
     else:
         bootloader_size = 384 * 1024
         # The bootloader goes at the start of first 384k, and the encoded
@@ -244,33 +253,36 @@ def FlashImage(roms,
 
         assert len(bootloader_binary) + len(descriptor_binary) + 4 < bootloader_size, \
             "Bootloader binary plus descriptor won't fit in %sk - need to change memory map" % (bootloader_size/1024)
+        padding_between_bootloader_and_descriptor_size = bootloader_size - len(bootloader_binary) - len(descriptor_binary) - 4
+        padding_after_descriptor_size = bootloader_bank_size - bootloader_size
+
         bootloader_bank = (
             # Start with the binary
             bootloader_binary +
             # Then padding to make binary + padding + descriptor + length == 384k
-            (b"\xff" * (bootloader_size - len(bootloader_binary) - len(descriptor_binary) - 4)) +
+            (b"\xff" * padding_between_bootloader_and_descriptor_size) +
             descriptor_binary +
             struct.pack("<i", len(descriptor_binary)) +
             # Then padding to 1M (which in future will also contain CMOS data)
-            (b"\xff" * (bootloader_bank_size - bootloader_size))
+            (b"\xff" * padding_after_descriptor_size)
         )
-        if bootloader_image_override:
-            # Bootloader image overridden -- ignore descriptor etc
-            bootloader_binary = open(bootloader_image_override, "rb").read()
-            bootloader_binary = switch_byte_order(bootloader_binary, byte_order)
-            bootloader_bank = (
-                bootloader_binary +
-                (b"\xff" * (bootloader_bank_size - len(bootloader_binary)))
-            )
+        print("Bootloader bank contents:")
+        blk_ptr = 0
+        for blk_desc, blk_size in (
+            ("Bootloader", len(bootloader_binary)),
+            ("Padding", padding_between_bootloader_and_descriptor_size),
+            ("Descriptor", len(descriptor_binary)),
+            ("Descriptor length", 4),
+            ("Padding", padding_after_descriptor_size),
+        ):
+            print(f"- {blk_ptr:08X}: {blk_desc} ({blk_size} B)")
+            blk_ptr += blk_size
+        print(f"Total size: {blk_ptr:08X} ({blk_ptr})")
         if bootloader_512k:
             # Hack to allow running the bootloader on an A310 and Arcflash v1 without modifying LK12.
             # Electrically this has LA18 coming in on the nOE pin, but this is OC on Arcflash v1.
             print("Repeating bootloader twice in first 1MB, to accommodate unmodified A310")
             bootloader_bank = bootloader_bank[:512*1024] + bootloader_bank[:512*1024]
-        print("Descriptor is %d bytes long, placed at %08X." % (
-            len(descriptor_binary),
-            bootloader_size - 4 - len(descriptor_binary)),
-        )
         print("Bootloader added.")
     assert(len(bootloader_bank) == bootloader_bank_size)
 
