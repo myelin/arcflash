@@ -39,6 +39,14 @@ static void newline() {
 			*ptr = *(volatile uint32_t *)((volatile uint8_t *)ptr + WIDTH * 8);
 		}
 		display_y -= 8;
+
+		// clear bottom row
+		for (volatile uint32_t *ptr = (volatile uint32_t *)SCREEN_ADDR(0, HEIGHT - 8);
+			ptr < (volatile uint32_t *)SCREEN_ADDR(0, HEIGHT);
+			ptr++)
+		{
+			*ptr = 0;
+		}
 	}
 }
 
