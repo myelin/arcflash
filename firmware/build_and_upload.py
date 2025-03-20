@@ -88,6 +88,7 @@ for src_dir, dest_dir in [
     os.makedirs(dest_dir, exist_ok=True)
     for f in os.listdir(src_dir):
         if os.path.splitext(f)[1] not in (".c", ".cc", ".cpp", ".h"): continue
+        if f.endswith("_test.cc"): continue
         if f in ("xsvftool-ft232h.c", "xsvftool-gpio.c"): continue
         src = os.path.join(src_dir, f)
         dest = os.path.join(dest_dir, f)

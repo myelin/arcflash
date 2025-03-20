@@ -31,6 +31,10 @@
 extern uint32_t _millis;
 inline uint32_t millis() { return _millis; }
 
+#define SERIAL_FRAMING_ERROR 0x100
+#define SERIAL_TIMEOUT 0x200
+extern uint32_t read_serial_byte();
+
 // cmos.cc
 extern void read_cmos();
 
@@ -50,3 +54,6 @@ extern void display_print_char(char c);
 extern void display_print(const char* s);
 extern void display_print_hex(uint32_t v);
 extern void display_printf(char const *format, ...);
+
+// test.cc
+extern void run_tests();

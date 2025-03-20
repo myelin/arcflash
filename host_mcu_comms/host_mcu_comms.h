@@ -22,6 +22,16 @@
 
 namespace host_mcu_comms {
 
+// Bit rate for UART comms.
+inline constexpr uint32_t kUartBaud = 10000;
+
+// Message types.
+#define DEFINE_MESSAGE_TYPE(name, a, b) \
+    inline constexpr int name = ((a) << 8 | (b))
+DEFINE_MESSAGE_TYPE(kMsgSelectRom, 'S', 'R');
+DEFINE_MESSAGE_TYPE(kMsgTestPing, 'T', 'P');
+DEFINE_MESSAGE_TYPE(kMsgTestResponse, 'T', 'R');
+
 // host_mcu_comms::transmit_byte: transmit a byte over the serial channel.
 //
 // Returns true on success, false on failure.
@@ -34,24 +44,72 @@ extern bool transmit_byte(uint8_t tx_byte);
 //
 // Returns true on success, false on failure.
 
-extern bool transmit_packet(const uint8_t* packet_data, size_t packet_length);
-
-// host_mcu_comms::process_received_byte: handle a byte received from the serial
-// channel.
-//
-// On the MCU, this is called whenever a byte shows up on the serial
-// channel, and return codes other than PACKET_RECEIVED are ignored.
-//
-// On the host, this is called during a blocking "receive packet"
-// operation, which will abort if a FAIL return code is received.
+extern bool transmit_packet(int packet_type, const uint8_t* packet_data,
+                            size_t packet_length);
 
 enum class ProcessReceivedByteResponse {
-  OK,
-  FAIL,
-  PACKET_RECEIVED,
+    OK,
+    FAIL,
+    PACKET_RECEIVED,
 };
 
-extern ProcessReceivedByteResponse process_received_byte(uint8_t rx_byte);
+class PacketReceiver {
+   public:
+    PacketReceiver(uint8_t* buffer, size_t buffer_size)
+        : buffer_(buffer), buffer_size_(buffer_size) {}
+
+    // Handle a byte received from the serial channel.
+    //
+    // On the MCU, this is called whenever a byte shows up on the serial
+    // channel, and return codes other than PACKET_RECEIVED are ignored.
+    //
+    // On the host, this is called during a blocking "receive packet"
+    // operation, which will abort if a FAIL return code is received.
+    ProcessReceivedByteResponse process_received_byte(uint8_t rx_byte);
+
+    // Return true if we have received a packet with a valid checksum.
+    bool valid() { return packet_received_; }
+
+    // Return packet type.
+    int packet_type() { return buffer_[1] | (buffer_[0] << 8); }
+
+    // Return pointer to start of message.
+    const uint8_t *message() { return buffer_ + 2; }
+
+    // Return size of received packet.
+    size_t size() { return buffer_pos_ - 6; }
+
+    // Reset to idle state, so we can receive another packet.
+    void reset() {
+        buffer_pos_ = 0;
+        last_char_was_escape_ = false;
+        reading_packet_ = false;
+        packet_received_ = false;
+    }
+
+   private:
+    // Helper method so process_received_byte etc. can just return fail().
+    ProcessReceivedByteResponse fail() {
+        reset();
+        return ProcessReceivedByteResponse::FAIL;
+    }
+
+    // Store a byte in the buffer.
+    ProcessReceivedByteResponse add_byte_to_buffer(uint8_t rx_byte);
+
+    // Data buffer pointer.
+    uint8_t* buffer_ = nullptr;
+    // Data buffer size.
+    size_t buffer_size_ = 0;
+    // Current position in receive buffer.
+    size_t buffer_pos_ = 0;
+    // Last received char was 0x18.
+    bool last_char_was_escape_ = false;
+    // Reading packet body (between 0x18 P and 0x18 F)
+    bool reading_packet_ = false;
+    // Flag set when packet is fully received.
+    bool packet_received_ = false;
+};
 
 }  // namespace host_mcu_comms
 

@@ -24,6 +24,7 @@
 // configure the ROM access timing.
 
 #include "arcflash.h"
+#include "host_mcu_comms.h"
 #include "version.h"
 
 #define BUF_SIZE 512
@@ -67,9 +68,7 @@ static void setup_bitbang_uart(bool half_time) {
   // steve3000 on Stardot, IOC is always clocked at 8MHz on Archimedes
   // machines, so we can use IOC timers to set a consistent bit rate.
 
-  // This must match the value in select_uart() in firmware.ino.
-#define UART_BAUD 25000
-  uint32_t uart_timer = 2000000L / UART_BAUD;
+  uint32_t uart_timer = 2000000L / host_mcu_comms::kUartBaud;
   // half_time is used when reading the start bit
   if (half_time == UART_HALF_BIT_TIME) uart_timer >>= 1;
 
@@ -107,26 +106,32 @@ void write_serial_byte(uint8_t c) {
   // data = 1 <8 data bits> 01
   uint32_t data = 0xc01 | (c << 2);
 
+  // Reset counter to latch value (that we just set).
+  IOC_TIMER1_GO = 0;
   for (int i = 0; i < 11; ++i) {
-    // Reset timer and assert data bit
-    IOC_CLEAR_TM1();
+    // Assert data bit.
     if (data & 1) {
       (void)*one;
     } else {
       (void)*zero;
     }
     // Wait for end of bit.
+    IOC_CLEAR_TM1();
     while (!IOC_TM1);
     data >>= 1;
   }
 }
 
+// Backend for host_mcu_comms::transmit_packet().
+bool host_mcu_comms::transmit_byte(uint8_t tx_byte) {
+  write_serial_byte(tx_byte);
+  return true;
+}
+
 // Returns:
 // - a byte read from the serial port,
-// - or 0x100 for a framing error,
-#define SERIAL_FRAMING_ERROR 0x100
-// - or 0x200 for a timeout
-#define SERIAL_TIMEOUT 0x200
+// - or bad_byte | SERIAL_FRAMING_ERROR for a framing error,
+// - or SERIAL_TIMEOUT for a timeout
 uint32_t read_serial_byte() {
   volatile uint32_t *rxd = (volatile uint32_t *)0x3fffff8L;
 #define RXD ((*rxd) & 1)
@@ -135,12 +140,10 @@ uint32_t read_serial_byte() {
 
   // Set the timer up to time halfway through the start bit
   setup_bitbang_uart(UART_HALF_BIT_TIME);
-  IOC_TIMER1_GO = 0;
-  IOC_CLEAR_TM1();
 
-  // Wait for the RXD falling edge
+  // Wait for the RXD falling edge.
 #define SERIAL_TIMEOUT_MILLIS 1000
-  uint32_t timeout = SERIAL_TIMEOUT_MILLIS * (UART_BAUD * 2) / 1000;  // Number of TM1 underflows in 1 second
+  uint32_t timeout = SERIAL_TIMEOUT_MILLIS * (host_mcu_comms::kUartBaud * 2) / 1000;  // Number of TM1 underflows in 1 second
   while (RXD) {
     // Test for timeout
     if (IOC_TM1) {
@@ -151,17 +154,13 @@ uint32_t read_serial_byte() {
     }
   }
 
-  // Reset timer and clear interrupt
+  // Wait half a bit time, to get to the middle of the start bit.
   IOC_TIMER1_GO = 0;
   IOC_CLEAR_TM1();
-
-  // Wait for timer underflow
   while (!IOC_TM1);
-  IOC_CLEAR_TM1();
 
-  // Reset timer to full bit time
+  // Reset timer period to full bit time.
   setup_bitbang_uart(UART_FULL_BIT_TIME);
-  IOC_TIMER1_GO = 0;
 
   // Next timeout will be the middle of bit 0.  Read 9 bits, verify that the
   // last is a 1, then we have a byte.
@@ -169,14 +168,16 @@ uint32_t read_serial_byte() {
   uint32_t data = 0;
 
   for (uint32_t i = 0; i < 9; ++i) {
-    while (!IOC_TM1);
+    // Wait for one bit time.
     IOC_CLEAR_TM1();
+    while (!IOC_TM1);
+    // Sample in the middle of the bit.
     data = (data >> 1) | (RXD << 8);
   }
 
   if (!(data & 0x100)) {
-    // framing error
-    return SERIAL_FRAMING_ERROR;
+    // Framing error -- stop bit should be a '1'.
+    return (data & 0xFF) | SERIAL_FRAMING_ERROR;
   }
 
   return data & 0xFF;
@@ -203,25 +204,22 @@ void loop() {
 
   setup_bitbang_uart(UART_FULL_BIT_TIME);
   IOC_TIMER1_GO = 0;
+  IOC_CLEAR_TM1();
 
   while (1) {
     timer_poll();
     keyboard_poll();
 
     int b = read_serial_rx();
-    // write_serial_tx(b);  // DEBUG disabled this so i can see the write_serial_byte output (and tweak the NOPs to work at 8MHz)
     // output to screen
     if (pixptr >= SCREEN_ADDR(0, 248)) {
       pixptr = SCREEN_ADDR(0, 240);
       ++white;
-      if (debug_byte != '*') write_serial_byte(debug_byte);
+      // host_mcu_comms::transmit_packet(host_mcu_comms::kMsgTestPing, &debug_byte, 1);
       ++debug_byte;
       if (debug_byte > 126) debug_byte = 32;
     }
     *pixptr++ = b ? white : BLACK;  // serial input status
-    // int tm1_active = IOC_TM1 ? 1 : 0;
-    // if (tm1_active) IOC_CLEAR_TM1();
-    // *pixptr++ = tm1_active ? white : BLACK;  // TM1 interrupt status
   }
 }
 
@@ -266,7 +264,9 @@ void keyboard_keydown(uint8_t keycode) {
     case KEY_Z: c = 'Z'; break;
   }
 
-  if (c && c >= 'A' && c < 'A' + descriptor.bank_count) {
+  if (c == 0) return;
+
+  if (c >= 'A' && c < 'A' + descriptor.bank_count) {
     // TODO turn this into a proper keyboard handler, but for now assume a
     // keydown on A-Z is to select an OS to boot
 
@@ -289,10 +289,15 @@ void keyboard_keydown(uint8_t keycode) {
 
     // Keep sending it to the MCU
     while (1) {
-      write_serial_byte('*');
-      write_serial_byte(flash_bank_select_command);
+      host_mcu_comms::transmit_packet(host_mcu_comms::kMsgSelectRom, &flash_bank_select_command, 1);
       delay(500);
     }
+  }
+
+  if (c == 'T') {
+    // Test mode!
+    run_tests();
+    return;
   }
 }
 

@@ -146,7 +146,7 @@ void select_uart() {
   spi_port_state = SpiPortState::UART_SELECTED;
   if (Serial.dtr()) Serial.println("select uart");
   sercom2.disableSPI();  // disable SERCOM so we can write registers
-  cpld_uart.begin(25000);  // This must match UART_BAUD in os_switcher_bootloader/main.cc.
+  cpld_uart.begin(host_mcu_comms::kUartBaud);
   pinPeripheral(CPLD_MOSI_PIN, PIO_SERCOM_ALT);
   pinPeripheral(CPLD_MISO_PIN, PIO_SERCOM_ALT);
   // disable all interrupts that begin() enables
@@ -379,6 +379,8 @@ void serial_put_uint32(uint32_t v) {
 
 // TODO move all these vars into the programming code -- we have more RAM in this chip than the atmega32u4 this was originally written for
 static uint32_t read_buf[BUF_SIZE];
+#define BUF_SIZE_U8 (BUF_SIZE * 4)
+static uint8_t *read_buf_u8 = (uint8_t *)read_buf;
 
 // count of chars read into read_buf
 static int buf_pos = 0;
@@ -389,6 +391,10 @@ uint32_t chip_end = 0L;
 // for range programming state
 uint32_t range_start = 0L, range_end = 0L; // range left to program
 int range_chunk_size = 0; // how many bytes to expect in the buffer
+
+
+// For comms from the host.  Reuse read_buf.
+host_mcu_comms::PacketReceiver packet_receiver(read_buf_u8, BUF_SIZE_U8);
 
 
 // true if we've seen dtr=1, false if we're disconnected or reset
@@ -736,6 +742,71 @@ static void reset_changed() {
   }
 }
 
+// Backend for host_mcu_comms::transmit_packet().
+bool host_mcu_comms::transmit_byte(uint8_t tx_byte) {
+  delay(1);
+  sercom2.writeDataUART(tx_byte);
+  return true;
+}
+
+// Process a character received from the host's bit-banged serial port,
+// that connects to SERCOM2 on the MCU.
+void process_char_received_from_host_serial_channel(uint8_t c) {
+  // if (Serial.dtr()) {
+  //   Serial.print(c, HEX);
+  // }
+  if (packet_receiver.process_received_byte(c) != host_mcu_comms::ProcessReceivedByteResponse::PACKET_RECEIVED) {
+    return;
+  }
+  if (!packet_receiver.valid()) {
+    // This should never happen, as we just got a PACKET_RECEIVED response above.
+    return;
+  }
+
+  if (Serial.dtr()) Serial.println("Packet received!");
+
+  switch (packet_receiver.packet_type()) {
+    // Test Ping command.
+    case host_mcu_comms::kMsgTestPing: {
+      // Retransmit the message in a Test Response packet.
+      if (Serial.dtr()) {
+        Serial.println("Responding to Test Ping command.");
+      }
+      // With no delay, the other end frequently misses the first half of the first character.
+      // Absolute minimum delay here is probably about 20 us.
+      host_mcu_comms::transmit_packet(
+        host_mcu_comms::kMsgTestResponse,
+        packet_receiver.message(),
+        packet_receiver.size());
+      break;
+    }
+
+    // Select Rom command.
+    case host_mcu_comms::kMsgSelectRom: {
+      if (Serial.dtr()) {
+        Serial.print("Select flash bank: ");
+        Serial.println(flash_bank_select_command, HEX);
+      }
+      // The next byte is a flash bank select command
+      uint8_t flash_bank_select_command = read_buf_u8[2];
+      select_flash_bank(DISABLE_SERIAL_PORT | flash_bank_select_command);
+      // Now reset the machine
+      digitalWrite(ndrive_arc_RESET_PIN, LOW);
+      delay(100);
+      digitalWrite(ndrive_arc_RESET_PIN, HIGH);
+      break;
+    }
+
+    // Unhandled.
+    default:
+      Serial.print("Unknown packet received: ");
+      Serial.print(read_buf_u8[0], HEX);
+      Serial.print(read_buf_u8[1], HEX);
+      Serial.println();
+      break;
+  }
+}
+
 void loop() {
 
   // monitor RESET line for double clicks (which tells us to reset/POR into the bootloader)
@@ -767,14 +838,14 @@ void loop() {
   select_uart();
 
   // DEBUG: output 0-255 on cpld_uart
-  static uint8_t uart_debug_char = 0;
-  static long last_char_written = 0;
-  long now = millis();
-  if ((now - last_char_written) > 1 && sercom2.isDataRegisterEmptyUART()) {
-    sercom2.writeDataUART(uart_debug_char++);
-    while (!sercom2.isDataRegisterEmptyUART());
-    last_char_written = now;
-  }
+  // static uint8_t uart_debug_char = 0;
+  // static long last_char_written = 0;
+  // long now = millis();
+  // if ((now - last_char_written) > 1 && sercom2.isDataRegisterEmptyUART()) {
+  //   sercom2.writeDataUART(uart_debug_char++);
+  //   while (!sercom2.isDataRegisterEmptyUART());
+  //   last_char_written = now;
+  // }
 
   if (sercom2.availableDataUART()) {
     if (sercom2.isFrameErrorUART()) {
@@ -787,26 +858,7 @@ void loop() {
         // TODO this should probably abort a packet in progress?
       }
     } else {
-      // Process correctly-received char
-      uint8_t c = sercom2.readDataUART();
-      if (Serial.dtr()) {
-        Serial.print("received: ");
-        Serial.println(c, HEX);
-        host_mcu_comms::process_received_byte(c);
-      }
-
-      static bool bitbang_serial_have_star = false;
-      if (bitbang_serial_have_star) {
-        bitbang_serial_have_star = false;
-        // Byte is a flash bank select command
-        select_flash_bank(DISABLE_SERIAL_PORT | c);
-        // Now reset the machine
-        digitalWrite(ndrive_arc_RESET_PIN, LOW);
-        delay(100);
-        digitalWrite(ndrive_arc_RESET_PIN, HIGH);
-      } else if (c == '*') {
-        bitbang_serial_have_star = true;
-      }
+      process_char_received_from_host_serial_channel(sercom2.readDataUART());
     }
   }
 
