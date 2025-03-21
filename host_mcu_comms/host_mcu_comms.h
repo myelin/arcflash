@@ -23,6 +23,11 @@
 namespace host_mcu_comms {
 
 // Bit rate for UART comms.
+// Host->MCU comms works 100% at 25000, fails 100% at 50000.
+// -- although the MCU sometimes just completely misses an
+// entire packet once in a while even at very slow rates.
+// MCU->host comms works 100% at 17000, 5% of the time at 20000.
+// Use 10k for safety.
 inline constexpr uint32_t kUartBaud = 10000;
 
 // Message types.

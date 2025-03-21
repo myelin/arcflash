@@ -104,21 +104,23 @@ void write_serial_byte(uint8_t c) {
 
   // Data is sent LSB first, so right to left here.
   // data = 1 <8 data bits> 01
-  uint32_t data = 0xc01 | (c << 2);
+  uint32_t data = 0x401 | (c << 2);
 
   // Reset counter to latch value (that we just set).
   IOC_TIMER1_GO = 0;
-  for (int i = 0; i < 11; ++i) {
+  while (data) {
     // Assert data bit.
     if (data & 1) {
       (void)*one;
     } else {
       (void)*zero;
     }
+    data >>= 1;
+
     // Wait for end of bit.
+    // Do this as late as possible to avoid jitter.
     IOC_CLEAR_TM1();
     while (!IOC_TM1);
-    data >>= 1;
   }
 }
 
@@ -161,6 +163,7 @@ uint32_t read_serial_byte() {
 
   // Reset timer period to full bit time.
   setup_bitbang_uart(UART_FULL_BIT_TIME);
+  IOC_TIMER1_GO = 0;
 
   // Next timeout will be the middle of bit 0.  Read 9 bits, verify that the
   // last is a 1, then we have a byte.

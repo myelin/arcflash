@@ -1,29 +1,33 @@
 #include "arcflash.h"
 #include "host_mcu_comms.h"
 
+// Just print bytes received from the serial channel (for debugging with Arculator).
+// #define SERIAL_JUST_PRINT
+
 void run_tests() {
     display_printf("Running Arcflash tests...\n");
 
     display_printf("Testing communications with the MCU.\n");
 
-    const int buffer_size = 800;
+    const int buffer_size = 8000;
     uint8_t test_buffer[buffer_size];
-    const int response_buffer_size = 1024;
+    const int response_buffer_size = 10240;
     uint8_t response_buffer[response_buffer_size];
 
     for (int i = 0; i < 100; ++i) {
-        display_printf("Sending packet %d\n", i);
+        int packet_size = (i * 500) % buffer_size;
+        display_printf("Sending packet %d (%d B)\n", i, packet_size);
         // Fill the test buffer.
-        for (int x = 0; x < buffer_size; ++x) {
+        for (int x = 0; x < packet_size; ++x) {
             test_buffer[x] = (i + (x * 10)) & 0xFF;
         }
         // Send a ping packet to the MCU.
         host_mcu_comms::transmit_packet(host_mcu_comms::kMsgTestPing,
-                                        test_buffer, buffer_size);
+                                        test_buffer, packet_size);
         // Wait for a response.
 #ifdef SERIAL_JUST_PRINT
         int pos = 0, frame_errors = 0;
-        for (; pos < 1000; ++pos) {
+        for (; pos < 100; ++pos) {
             uint32_t c = read_serial_byte();
             if (c == SERIAL_TIMEOUT) {
                 display_printf("Timeout after %d bytes\n", pos);
@@ -38,6 +42,7 @@ void run_tests() {
             display_printf(" %02X", response_buffer[x]);
         }
         display_printf("\n");
+        while (1);  // Stop here, to make the Arculator logs easier to read.
 #else
         host_mcu_comms::PacketReceiver packet_receiver(response_buffer,
                                                        response_buffer_size);
@@ -68,8 +73,13 @@ void run_tests() {
                     display_printf(
                         "Response %d (%X) received successfully (%d B).\n", i,
                         packet_receiver.packet_type(), packet_receiver.size());
+                    int compare_size = packet_size;
+                    if (packet_receiver.size() != packet_size) {
+                        display_printf("Packet size mismatch\n");
+                        compare_size = packet_receiver.size();
+                    }
                     bool match = true;
-                    for (int i = 0; i < buffer_size; ++i) {
+                    for (int i = 0; i < compare_size; ++i) {
                         if (test_buffer[i] != packet_receiver.message()[i])
                             match = false;
                     }

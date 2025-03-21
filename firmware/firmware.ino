@@ -744,17 +744,21 @@ static void reset_changed() {
 
 // Backend for host_mcu_comms::transmit_packet().
 bool host_mcu_comms::transmit_byte(uint8_t tx_byte) {
-  delay(1);
+  // 650 works, 600 is flaky, 550 fails consistently.
+  // Use 1000 for safety.
+  delayMicroseconds(1000);
   sercom2.writeDataUART(tx_byte);
+  // It might also be effective to wait for the byte to transmit,
+  // then wait a shorter time, as 650 us above was working at
+  // 17k baud (588 us per byte), so maybe we just need an extra
+  // 50-100 us between bytes.
+  // while (!sercom2.isDataRegisterEmptyUART());
   return true;
 }
 
 // Process a character received from the host's bit-banged serial port,
 // that connects to SERCOM2 on the MCU.
 void process_char_received_from_host_serial_channel(uint8_t c) {
-  // if (Serial.dtr()) {
-  //   Serial.print(c, HEX);
-  // }
   if (packet_receiver.process_received_byte(c) != host_mcu_comms::ProcessReceivedByteResponse::PACKET_RECEIVED) {
     return;
   }
@@ -772,8 +776,10 @@ void process_char_received_from_host_serial_channel(uint8_t c) {
       if (Serial.dtr()) {
         Serial.println("Responding to Test Ping command.");
       }
-      // With no delay, the other end frequently misses the first half of the first character.
-      // Absolute minimum delay here is probably about 20 us.
+      // There used to be a delay(1) call here, to give the other end some time to
+      // get ready to catch the falling edge of the start bit of the first character.
+      // It turned out that this is necessary for *every* character, though, so now
+      // this is in host_mcu_comms::transmit_byte() instead.
       host_mcu_comms::transmit_packet(
         host_mcu_comms::kMsgTestResponse,
         packet_receiver.message(),
@@ -836,16 +842,6 @@ void loop() {
   // Switch to serial mode if we're in SPI mode.  This will do nothing
   // if we're already in serial mode.
   select_uart();
-
-  // DEBUG: output 0-255 on cpld_uart
-  // static uint8_t uart_debug_char = 0;
-  // static long last_char_written = 0;
-  // long now = millis();
-  // if ((now - last_char_written) > 1 && sercom2.isDataRegisterEmptyUART()) {
-  //   sercom2.writeDataUART(uart_debug_char++);
-  //   while (!sercom2.isDataRegisterEmptyUART());
-  //   last_char_written = now;
-  // }
 
   if (sercom2.availableDataUART()) {
     if (sercom2.isFrameErrorUART()) {
