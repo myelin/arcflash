@@ -54,7 +54,7 @@ bool transmit_packet(int packet_type, const uint8_t *packet_data,
     if (!transmit_byte(packet_type_encoded[1])) return false;
     uint32_t crc = crc32(packet_type_encoded, 2);
     // Send packet data
-    for (int i = 0; i < packet_length; ++i) {
+    for (size_t i = 0; i < packet_length; ++i) {
         if (!transmit_escaped_byte(packet_data[i])) return false;
     }
     crc = crc32(packet_data, packet_length, crc);
