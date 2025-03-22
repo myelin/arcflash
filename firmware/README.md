@@ -8,9 +8,13 @@ To build and upload, you'll need to [install arduino-cli](https://arduino.github
 
 macOS: `brew install arduino-cli`
 
-Run `make upload` or `python3 build_and_upload.py` to build the code and upload it to a connected Arcflash board.
+Ubuntu: `sudo apt install make; sudo snap install arduino-cli`
 
-If you see "Platform not installed" or "Error resolving FQBN" errors, update your cores:
+Run `make` for an incremental build or `make release` for a clean build.
+
+Run `make upload` to build the code and upload it to a connected Arcflash board.
+
+If you see "Platform not installed", "Error resolving FQBN", or an error finding a tool like `arm-none-eabi-g++`, update your cores:
 
 ~~~
 arduino-cli core update-index

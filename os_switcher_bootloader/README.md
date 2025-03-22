@@ -15,6 +15,8 @@ Prerequisites:
 
 On macOS: `brew install protobuf python`, and to de-quarantine the toolchain, `find /opt/gcc-arm-none-eabi-8-2019-q3-update/ -type f -perm +111 -exec xattr -d com.apple.quarantine {} \;`
 
+On Ubuntu: `sudo apt install protobuf-compiler python3 python3-protobuf`
+
 To build, run 'make clean all'.  This will generate switcher.rom, which can be
 run on Arculator -- just put it in one of the riscos folders and set rom_set
 appropriately.  (For example, if you save it as roms/riscos3/switcher.rom, you
