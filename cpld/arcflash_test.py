@@ -130,13 +130,13 @@ async def spi_flash_read(dut, addr):
 def init(dut):
     dut.rom_5V.value = 1
     dut.rom_nCS.value = 0
-    dut.flash0_DQ = Release()
-    dut.flash1_DQ = Release()
+    dut.flash0_DQ.value = Release()
+    dut.flash1_DQ.value = Release()
     dut.rom_nOE.value = 0
     dut.cpld_MISO_int.value = 1
     dut.cpld_MISO_TXD.value = 0
-    dut.spi_A = 0
-    dut.spi_D = 0
+    dut.spi_A.value = 0
+    dut.spi_D.value = 0
     dut.spi_bit_count.value = 0
 
 
@@ -236,7 +236,7 @@ async def test_mcu_write_to_flash(dut):
         dut.allowing_arm_access.value == 0
     ), "Flash write should leave ARM access disabled"
 
-    await write_catcher.join()
+    await write_catcher
     A, D = write_catcher.result()
     assert A == test_addr, "Flash write has wrong address %X (expected %X)" % (
         A,
