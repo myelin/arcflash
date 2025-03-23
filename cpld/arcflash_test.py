@@ -15,6 +15,8 @@
 # limitations under the License.
 
 
+import random
+
 import cocotb
 from cocotb.handle import Force, Release
 from cocotb.clock import Clock
@@ -178,6 +180,65 @@ async def test_enable_arm_access(dut):
     assert dut.flash_nCE.value == 0
     assert dut.flash_nOE.value == 0
     assert dut.flash_nWE.value == 1
+
+
+@cocotb.test()
+async def test_arm_read_from_flash(dut):
+    """Test that the ARM can read a word from flash."""
+
+    init(dut)
+
+    # Test with 1MB, 2MB, 4MB banks.
+    for bank_size in (1, 2, 4):
+        # Test with every flash bank.
+        for flash_bank in range(0, 16, bank_size):
+            dut._log.info(f"Testing access to {bank_size} MiB bank {flash_bank}")
+
+            # Configure desired bank + size.
+
+            # bit 7: allowing ARM access: rest of SPI transaction (one byte) is a control message
+            # bit 6: serial port disabled until reset (allow reading last few bytes of flash)
+            # bit 5: use_la21
+            # bit 4: use_la20
+            # bit 3-0: flash_bank
+
+            use_la21 = 1 if bank_size > 2 else 0
+            use_la20 = 1 if bank_size > 1 else 0
+
+            config_byte = (
+                # allow ARM access
+                (1<<7) |
+                # serial port disabled
+                (1<<6) |
+                (use_la21 << 5) |
+                (use_la20 << 4) |
+                flash_bank
+            )
+
+            await spi_send(dut, [config_byte])
+
+            # Verify config was applied.
+            assert dut.use_la21.value == use_la21
+            assert dut.use_la20.value == use_la20
+            assert dut.flash_bank.value == flash_bank
+            assert dut.disable_serial_port.value == 1
+            assert dut.allowing_arm_access.value == 1
+
+            # Assert a random address on the address bus.
+            addr = random.randint(0, (bank_size * 1048576 - 1) >> 2)
+            dut.rom_A.value = addr
+            await tick()
+
+            # Verify the correct address appears on flash_A.
+            expected_flash_addr = addr | (flash_bank << 18)
+
+            assert dut.flash_A.value == expected_flash_addr, (
+                f"flash_A = {int(dut.flash_A.value):X}, expected {expected_flash_addr:X} (bank {flash_bank:X}, addr {addr:X})"
+            )
+
+    # rom_A is 20 bits wide, from LA21 down to LA2.
+    # (5 hex chars).
+    dut.rom_A.value = 0xfedcb
 
 
 @cocotb.test()
