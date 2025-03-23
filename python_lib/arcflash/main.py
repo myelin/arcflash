@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,5 +12,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
+import os
+import sys
+import re
+
+from . import uploader
+
 def main():
-	print("Arcflash - TODO")
+    parser = argparse.ArgumentParser(description='Arcflash command line tool')
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # 'arcflash upload'
+    upload_parser = subparsers.add_parser('upload', help='Upload a flash image file to a connected Arcflash board')
+    upload_parser.add_argument('filename', help='Path to the flash image file to upload')
+    # TODO ' (optionally path@offset+length)'
+
+    args = parser.parse_args()
+
+    if args.command == 'upload':
+        # Upload something into flash.
+
+        # Read image to upload.
+        filename, offset, length = args.filename, None, None
+        # TODO implement "program range" command, then enable below code:
+        # m = re.search(r"(.*?)(?:@(\d+)(?:(\+(\d+))))", args.filename)
+        # filename, offset, length = m.groups()
+        # offset = int(offset) if offset else None
+        # length = int(length) if length else None
+        if not os.path.exists(filename):
+            print(f"Flash image file {filename} not found")
+            return 1
+
+        with open(filename, 'rb') as f:
+            image = f.read()
+
+        uploader.upload(filename, image, offset, length)
+        return 0
+
+    parser.print_help()
+    return 1
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 # Copyright 2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,7 +37,9 @@ def read_until(ser, match):
                 time.sleep(0.1)
     return resp
 
-def upload(rom):
+def upload(rom_fn, rom, upload_offset=None, upload_length=None):
+    """Upload `upload_length` bytes from image `rom` at offset `upload_offset`."""
+
     with afserial.Port() as ser:
         print("\n* Port open.  Giving it a kick, and waiting for OK.")
         ser.write(b"\n")
@@ -55,10 +55,24 @@ def upload(rom):
         print("\n* Chip size = %d bytes" % chip_size)
         usb_block_size = 63 if (chip_size < 1048576) else 1024  # atmega32u4 can't handle big usb chunks, but atsamd21 can
 
-        if len(rom) != chip_size:
-            raise Exception("%s is %d bytes long, which does not match the flash capacity of %d bytes" % (rom_fn, len(rom), chip_size))
+        if upload_offset is None and upload_length is None:
+            upload_offset = 0
+            upload_length = len(rom)
+
+        # For now, we can only program the entire chip.
+        if upload_length != chip_size:
+            raise Exception(
+                "%s is %d bytes long, which does not match the flash capacity of %d bytes" % (
+                    rom_fn, upload_length, chip_size))
+
+        # Upload must begin inside the flash.
+        assert 0 <= upload_offset <= chip_size
+        # Upload must end inside the flash.
+        assert 0 <= upload_length <= chip_size - upload_offset
 
         print("\n* Start programming process")
+        # TODO make a "program range" command.
+        # ser.write("P {upload_offset} {upload_length}\n")  # program range
         ser.write(b"P\n")  # program chip
 
         input_buf = b''

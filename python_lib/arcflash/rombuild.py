@@ -315,4 +315,4 @@ def FlashImage(roms,
 
     if cmd == 'upload':
         print("Uploading to flash")
-        uploader.upload(flash)
+        uploader.upload("Generated image", flash, offset=None, length=None)
