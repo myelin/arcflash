@@ -141,8 +141,8 @@ def init(dut):
 
 
 @cocotb.test()
-async def disable_arm_access(dut):
-    """Pass initial 0 to SPI, to disable ARM access."""
+async def test_disable_arm_access(dut):
+    """Test that initial 0 to SPI disables ARM access."""
 
     init(dut)
 
@@ -161,8 +161,8 @@ async def disable_arm_access(dut):
 
 
 @cocotb.test()
-async def enable_arm_access(dut):
-    """Pass initial 1 to SPI, to enable ARM access."""
+async def test_enable_arm_access(dut):
+    """Test that initial 1 to SPI enables ARM access."""
 
     init(dut)
 
@@ -181,8 +181,8 @@ async def enable_arm_access(dut):
 
 
 @cocotb.test()
-async def read_from_flash(dut):
-    """Read a word from flash."""
+async def test_mcu_read_from_flash(dut):
+    """Test that an SPI read command reads a word from flash."""
 
     init(dut)
 
@@ -221,8 +221,8 @@ async def catch_flash_write(dut):
 
 
 @cocotb.test()
-async def write_to_flash(dut):
-    """Write a word to flash."""
+async def test_mcu_write_to_flash(dut):
+    """Test that an SPI write command writes a word to flash."""
 
     init(dut)
 
