@@ -23,8 +23,12 @@ from cocotb.clock import Clock
 from cocotb.triggers import Timer, FallingEdge, RisingEdge
 
 
+DEBUG_SPI = 0
+
+
 def tick():
-    return Timer(1, units="ns")
+    # One clock half-period at 50 MHz.
+    return Timer(1000/50/2, units="ns")
 
 
 async def wait_one_clock_cycle(dut):
@@ -33,6 +37,10 @@ async def wait_one_clock_cycle(dut):
     dut.cpld_clock_from_mcu.value = 1
     await tick()
 
+
+async def wait_one_spi_half_period(dut):
+    for __ in range(4):
+        await wait_one_clock_cycle(dut)
 
 async def drop_rom_nCS_and_wait_to_settle(dut):
     # Set rom_nCS high for a few clock cycles.
@@ -53,18 +61,19 @@ async def spi_send_byte(dut, b):
     r = 0
     for _ in range(8):
         dut.cpld_MOSI.value = (b & 0x80) >> 7
-        await tick()
+        await wait_one_spi_half_period(dut)
         dut.cpld_SCK.value = 1
-        await tick()
+        await wait_one_spi_half_period(dut)
         dut.cpld_SCK.value = 0
-        # dut._log.info(
-        #     "spi; cpld_MISO=%s enable_bitbang_serial=%s cpld_SS+%s cpld_MISO_TXD=%s cpld_MISO_int=%s",
-        #     dut.cpld_MISO.value,
-        #     dut.enable_bitbang_serial,
-        #     dut.cpld_SS.value,
-        #     dut.cpld_MISO_TXD.value,
-        #     dut.cpld_MISO_int.value,
-        # )
+        if DEBUG_SPI:
+            dut._log.info(
+                "spi; cpld_MISO=%s enable_bitbang_serial=%s cpld_SS+%s cpld_MISO_TXD=%s cpld_MISO_int=%s",
+                dut.cpld_MISO.value,
+                dut.enable_bitbang_serial,
+                dut.cpld_SS.value,
+                dut.cpld_MISO_TXD.value,
+                dut.cpld_MISO_int.value,
+            )
         r = (r << 1) | dut.cpld_MISO.value
         b = (b << 1) & 0xFF
     return r
@@ -74,17 +83,17 @@ async def spi_send(dut, spi_bytes):
     await tick()
     dut.cpld_SS.value = 0
     dut.cpld_SCK.value = 0
-    await tick()
+    await wait_one_spi_half_period(dut)
     ret = []
     expected_bits = 0
     for b in spi_bytes:
         ret.append(await spi_send_byte(dut, b))
         expected_bits = (expected_bits + 8) % 64
         assert (
-            dut.spi_bit_count == expected_bits
+            dut.spi_bit_count.value == expected_bits
         ), "spi_bit_count is %d but expected %d" % (dut.spi_bit_count, expected_bits)
     dut.cpld_SS.value = 1
-    await tick()
+    await wait_one_spi_half_period(dut)
 
     dut._log.info(
         "spi transaction: sent %s received %s",
@@ -397,3 +406,7 @@ async def test_bitbang_serial_writes_from_mcu(dut):
         assert dut.rom_D.value == val, (
             "ROM %d bit didn't pass through with enabled serial port" % val
         )
+
+
+# TODO add a test for rom_5V
+# TODO test all serial port addresses: if use_la21/use_la20 are 0, the port moves lower
