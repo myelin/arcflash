@@ -117,7 +117,9 @@ reg cpld_MISO_TXD = 1'b1;  // value to assign to cpld_MISO when cpld_SS==1
 reg cpld_MISO_int = 1'b1;  // MISO when cpld_SS==0
 
 // counts up to 63
-reg [5:0] spi_bit_count = 6'b0;
+reg [6:0] spi_bit_count = 6'b0;
+wire [2:0] spi_byte_count;
+assign spi_byte_count = spi_bit_count[6:4];
 
 // 1 if the SPI transaction is a read, 0 for a write
 reg spi_rnw = 1'b1;
@@ -126,7 +128,10 @@ reg spi_rnw = 1'b1;
 reg [21:0] spi_A = 22'b0;
 
 // Data value in SPI transaction
-reg [31:0] spi_D = 32'b0;
+reg [15:0] spi_D = 16'b0;
+
+// Flash chip selector in SPI transaction
+reg spi_flash_chip_selection = 1'b0;
 
 // 1 when an SPI transaction wants flash_nCE low (and flash_nOE for reads)
 reg accessing_flash = 1'b0;
@@ -296,8 +301,9 @@ assign flash_A = allowing_arm_access == 1'b1 ? (
   );
 
 // Flash chip data lines
-assign flash0_DQ = allowing_arm_access == 1'b1 ? 16'bZ : (accessing_flash == 1'b1 && spi_rnw == 1'b0 ? spi_D[15:0] : 16'bZ);
-assign flash1_DQ = allowing_arm_access == 1'b1 ? 16'bZ : (accessing_flash == 1'b1 && spi_rnw == 1'b0 ? spi_D[31:16] : 16'bZ);
+wire writing_to_flash = (allowing_arm_access == 1'b0 && accessing_flash == 1'b1 && spi_rnw == 1'b0);
+assign flash0_DQ = writing_to_flash ? spi_D[15:0] : 16'bZ;
+assign flash1_DQ = writing_to_flash ? spi_D[15:0] : 16'bZ;
 
 // Flash chip control lines
 assign flash_nCE = allowing_arm_access == 1'b1 ? n_selected : (accessing_flash == 1'b1 ? 1'b0 : 1'b1);
@@ -360,75 +366,81 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
       mcu_to_arm_read_state_sync <= mcu_to_arm_read_state;  // TODO use this
       $display("SPI: Set allowing_arm_access to %d", cpld_MOSI);
     end else if (allowing_arm_access == 1) begin
-      if (spi_bit_count < 8) begin  // HACK probably don't need to check spi_bit_count here
+      if (spi_byte_count == 0) begin  // HACK probably don't need to check spi_bit_count here
         // bit 0: allowing ARM access: rest of SPI transaction (one byte) is a control message
         // bit 1: serial port disabled until reset (allow reading last few bytes of flash)
         // bit 2: use_la21
         // bit 3: use_la20
         // bit 4-7: flash_bank
         {disable_serial_port, use_la21, use_la20, flash_bank} <= {use_la21, use_la20, flash_bank, cpld_MOSI};
-      end else if (spi_bit_count == 12) begin
-        if (enable_comms) begin
-          // mcu has data for me
-          mcu_to_arm_write_state <= cpld_MOSI;
-          spi_D[31] <= arm_to_mcu_write_state;  // HACK: 41.6ns to resolve metastability
-          // TODO toggle write state rather than copy
-        end
-      end else if (spi_bit_count == 13) begin
-        if (enable_comms) begin
-          // mcu has buffer space for me to transmit
-          arm_to_mcu_read_state <= cpld_MOSI;
-          // TODO toggle read state rather than copy
-          spi_D[31] <= mcu_to_arm_read_state;  // HACK: 41.6ns to resolve metastability
-        end
-      end else if (spi_bit_count == 14) begin
-        if (enable_comms) begin
-          // data bit from mcu
-          // TODO only replace if there's room
-          // (can dispense with this if we really need the space)
-          mcu_to_arm_buffer <= {cpld_MOSI};
-          spi_D[31] <= arm_to_mcu_buffer[0];  // HACK: 41.6ns to resolve metastability
-        end
       end
+      //  else if (spi_bit_count == 12) begin
+      //   if (enable_comms) begin
+      //     // mcu has data for me
+      //     mcu_to_arm_write_state <= cpld_MOSI;
+      //     spi_D[31] <= arm_to_mcu_write_state;  // HACK: 41.6ns to resolve metastability
+      //     // TODO toggle write state rather than copy
+      //   end
+      // end else if (spi_bit_count == 13) begin
+      //   if (enable_comms) begin
+      //     // mcu has buffer space for me to transmit
+      //     arm_to_mcu_read_state <= cpld_MOSI;
+      //     // TODO toggle read state rather than copy
+      //     spi_D[31] <= mcu_to_arm_read_state;  // HACK: 41.6ns to resolve metastability
+      //   end
+      // end else if (spi_bit_count == 14) begin
+      //   if (enable_comms) begin
+      //     // data bit from mcu
+      //     // TODO only replace if there's room
+      //     // (can dispense with this if we really need the space)
+      //     mcu_to_arm_buffer <= {cpld_MOSI};
+      //     spi_D[31] <= arm_to_mcu_buffer[0];  // HACK: 41.6ns to resolve metastability
+      //   end
+      // end
     end else begin
       // not allowing ARM access: rest of SPI transaction is a flash access request
-      if (spi_bit_count == 1) begin
-        spi_rnw <= cpld_MOSI;
-        $display("SPI: memory transaction, RnW=%d", cpld_MOSI);
-      end else if (spi_bit_count >= 8 && spi_bit_count < 32) begin  // 22 bit address
+      if (spi_byte_count == 0) begin
+        if (spi_bit_count == 1) begin
+          spi_rnw <= cpld_MOSI;
+          $display("SPI: memory transaction, RnW=%d", cpld_MOSI);
+        end
+      end else if (spi_byte_count == 1 || spi_byte_count == 2 || spi_byte_count == 3) begin  // 22 bit address
         spi_A <= {spi_A[20:0], cpld_MOSI};
       end else if (spi_rnw == 1'b1) begin
         // FLASH READ
         // See comment above this whole block for timing details.
-        if (spi_bit_count == 32) begin
-          // start read
-          accessing_flash <= 1'b1;
-        end else if (spi_bit_count == 39) begin
-          // end read
-          spi_D <= {flash1_DQ, flash0_DQ};
-          $display("SPI: memory read; flash_DQ = %04X %04X", flash1_DQ, flash0_DQ);
-          accessing_flash <= 1'b0;
-        end else if (spi_bit_count >= 40) begin
-          spi_D <= {spi_D[30:0], 1'b0};
+        if (spi_byte_count == 4) begin
+          if (spi_bit_count == 32) begin
+            // start read
+            accessing_flash <= 1'b1;
+          end else if (spi_bit_count == 39) begin
+            // end read
+            spi_D <= spi_flash_chip_selection == 1'b1 ? flash1_DQ : flash0_DQ;
+            $display("SPI: memory read; flash_DQ = %04X %04X", flash1_DQ, flash0_DQ);
+            accessing_flash <= 1'b0;
+          end
+        end else begin  // spi_byte_count >= 5
+          spi_D <= {spi_D[14:0], 1'b0};
         end
       end else if (spi_rnw == 1'b0) begin
         // FLASH WRITE
         // See comment above this whole block for timing details.
-        if (spi_bit_count >= 8 && spi_bit_count < 64) begin
-          spi_D <= {spi_D[30:0], cpld_MOSI};
-        end
-        if (spi_bit_count == 64) begin
-          $display("SPI: memory write; flash_DQ = %08X", spi_D);
-          accessing_flash <= 1'b1;
-        end
-        if (spi_bit_count == 65) begin
-          writing_flash <= 1'b1;
-        end
-        if (spi_bit_count == 66) begin
-          writing_flash <= 1'b0;
-        end
-        if (spi_bit_count == 67) begin
-          accessing_flash <= 1'b0;
+        if (spi_byte_count == 4 || spi_byte_count == 5) begin
+          spi_D <= {spi_D[14:0], cpld_MOSI};
+        end else if (spi_byte_count == 6) begin
+          if (spi_bit_count == 48) begin
+            $display("SPI: memory write; flash_DQ = %08X", spi_D);
+            accessing_flash <= 1'b1;
+          end
+          if (spi_bit_count == 49) begin
+            writing_flash <= 1'b1;
+          end
+          if (spi_bit_count == 50) begin
+            writing_flash <= 1'b0;
+          end
+          if (spi_bit_count == 51) begin
+            accessing_flash <= 1'b0;
+          end
         end
       end
     end
@@ -437,7 +449,7 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
 end
 
 always @(negedge cpld_SCK) begin
-  cpld_MISO_int <= spi_D[31];
+  cpld_MISO_int <= spi_D[15];
   if (enable_comms) begin
     if (spi_bit_count == 12) begin
       // we have data for mcu
