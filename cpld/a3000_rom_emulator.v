@@ -345,8 +345,14 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
     // t=2ck: Raise /WR
     // t=3ck: Raise /CE
 
-    // So for reads:   0=arm 1=rnw 2-23=A 24-31=0 32-63=data (setting up A from 2-23, reading at 31)
-    // And for writes: 0=arm 1=rnw 2-23=A 24-55=data 56-63=0 (setting up A and D from 2-55, /CE low from 56-59, /WR low from 57-58)
+    // So for reads:   0=arm 1=rnw
+    //                 8-31=A (ignoring extra high bits)
+    //                 32-39=0 (/CE+/OE low at 32,reading at 39)
+    //                 40-71=data
+    // And for writes: 0=arm 1=rnw
+    //                 8-31=A (ignoring extra high bits)
+    //                 32-63=data
+    //                 64-71=0 (/CE low from 64-67, /WR low from 65-66)
 
     if (spi_bit_count == 0) begin
       allowing_arm_access <= cpld_MOSI;
@@ -389,39 +395,39 @@ always @(posedge cpld_SCK or posedge cpld_SS) begin
       if (spi_bit_count == 1) begin
         spi_rnw <= cpld_MOSI;
         $display("SPI: memory transaction, RnW=%d", cpld_MOSI);
-      end else if (spi_bit_count < 24) begin  // 22 bit address in spi bits 2-23
+      end else if (spi_bit_count >= 8 && spi_bit_count < 32) begin  // 22 bit address
         spi_A <= {spi_A[20:0], cpld_MOSI};
       end else if (spi_rnw == 1'b1) begin
         // FLASH READ
-        // 24-31=0 32-63=data (setting up A from 2-23, /CE+/OE low at 24,reading at 31)
-        if (spi_bit_count == 24) begin
+        // See comment above this whole block for timing details.
+        if (spi_bit_count == 32) begin
           // start read
           accessing_flash <= 1'b1;
-        end else if (spi_bit_count == 31) begin
+        end else if (spi_bit_count == 39) begin
           // end read
           spi_D <= {flash1_DQ, flash0_DQ};
           $display("SPI: memory read; flash_DQ = %04X %04X", flash1_DQ, flash0_DQ);
           accessing_flash <= 1'b0;
-        end else if (spi_bit_count >= 32) begin
+        end else if (spi_bit_count >= 40) begin
           spi_D <= {spi_D[30:0], 1'b0};
         end
       end else if (spi_rnw == 1'b0) begin
         // FLASH WRITE
-        // 24-55=data 56-63=0 (setting up A and D from 2-55, /CE low from 56-59, /WR low from 57-58)
-        if (spi_bit_count < 56) begin
+        // See comment above this whole block for timing details.
+        if (spi_bit_count >= 8 && spi_bit_count < 64) begin
           spi_D <= {spi_D[30:0], cpld_MOSI};
         end
-        if (spi_bit_count == 56) begin
+        if (spi_bit_count == 64) begin
           $display("SPI: memory write; flash_DQ = %08X", spi_D);
           accessing_flash <= 1'b1;
         end
-        if (spi_bit_count == 57) begin
+        if (spi_bit_count == 65) begin
           writing_flash <= 1'b1;
         end
-        if (spi_bit_count == 58) begin
+        if (spi_bit_count == 66) begin
           writing_flash <= 1'b0;
         end
-        if (spi_bit_count == 59) begin
+        if (spi_bit_count == 67) begin
           accessing_flash <= 1'b0;
         end
       end
