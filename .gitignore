@@ -1,6 +1,7 @@
 .dropbox
 Icon?
 *.o
+*.so
 *.pyc
 *.bak
 *-bak

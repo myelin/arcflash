@@ -13,8 +13,8 @@
 # limitations under the License.
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "arcflash"
@@ -42,3 +42,27 @@ Issues = "https://github.com/myelin/arcflash/issues"
 
 [project.scripts]
 arcflash = "arcflash.main:main"
+
+[tool.setuptools]
+package-dir = { "arcflash" = "arcflash" }
+
+[[tool.setuptools.ext-modules]]
+name = "arcflash._bossa"
+extra-compile-args = ["-Wno-unqualified-std-cast-call"]
+include-dirs = ["../third_party/bossa/src"]
+sources = [
+    "_bossa.cc",
+    "../third_party/bossa/src/Samba.cpp",
+    "../third_party/bossa/src/Flash.cpp",
+    "../third_party/bossa/src/D5xNvmFlash.cpp",
+    "../third_party/bossa/src/D2xNvmFlash.cpp",
+    "../third_party/bossa/src/EfcFlash.cpp",
+    "../third_party/bossa/src/EefcFlash.cpp",
+    "../third_party/bossa/src/Applet.cpp",
+    "../third_party/bossa/src/WordCopyApplet.cpp",
+    "../third_party/bossa/src/WordCopyArm.cpp",
+    "../third_party/bossa/src/Flasher.cpp",
+    "../third_party/bossa/src/Device.cpp",
+    "../third_party/bossa/src/PosixSerialPort.cpp",
+    "../third_party/bossa/src/OSXPortFactory.cpp",
+]

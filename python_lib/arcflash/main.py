@@ -17,23 +17,40 @@ import os
 import sys
 import re
 
-from . import program_cpld
-from . import uploader
+import arcflash._bossa
+import arcflash.program_cpld
+import arcflash.uploader
 
 def main():
     parser = argparse.ArgumentParser(description='Arcflash command line tool')
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # 'arcflash program-cpld'
+    program_cpld_parser = subparsers.add_parser('program-cpld', help='Program CPLD on a connected Arcflash board')
+    program_cpld_parser.add_argument('filename', help='Path to the SVF file to upload')
+
+    # 'arcflash program-mcu'
+    program_mcu_parser = subparsers.add_parser('program-mcu', help='Program microcontroller firmware on a connected Arcflash board')
+    program_mcu_parser.add_argument('filename', help='Path to the .bin file to upload')
 
     # 'arcflash upload'
     upload_parser = subparsers.add_parser('upload', help='Upload a flash image file to a connected Arcflash board')
     upload_parser.add_argument('filename', help='Path to the flash image file to upload')
     # TODO ' (optionally path@offset+length)'
 
-    # 'arcflash program-cpld'
-    program_cpld_parser = subparsers.add_parser('program-cpld', help='Program CPLD on a connected Arcflash board')
-    program_cpld_parser.add_argument('filename', help='Path to the SVF file to upload')
-
     args = parser.parse_args()
+
+    if args.command == 'program-cpld':
+        # Program CPLD.
+        return arcflash.program_cpld.program(args.filename)
+
+    if args.command == 'program-mcu':
+        # Program microcontroller firmware.
+        port = arcflash.port.guess_port()
+        if not port:
+            print("Could not guess serial port")
+            return 1
+        return arcflash._bossa.program(port, args.filename)
 
     if args.command == 'upload':
         # Upload something into flash.
@@ -52,12 +69,8 @@ def main():
         with open(filename, 'rb') as f:
             image = f.read()
 
-        uploader.upload(filename, image, offset, length)
+        arcflash.uploader.upload(filename, image, offset, length)
         return 0
-
-    if args.command == 'program-cpld':
-        # Program CPLD.
-        return program_cpld.program(args.filename)
 
     parser.print_help()
     return 1
