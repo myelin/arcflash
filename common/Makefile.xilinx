@@ -78,10 +78,8 @@ clean:
 show-results:
 	open ${MODULE}_html/fit/index.htm
 
-# Program using a simple_cpld_programmer board
-
 program:
-	python3 ${SHARED_PATH}/simple_cpld_programmer/program_cpld.py ${MODULE}-${PART}.svf
+	arcflash program-cpld ${MODULE}-${PART}.svf
 
 # Program using xc3sprog and an FTDI board
 

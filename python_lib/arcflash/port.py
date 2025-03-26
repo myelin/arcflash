@@ -13,8 +13,6 @@ from __future__ import print_function
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
-
 import serial
 import serial.tools.list_ports
 

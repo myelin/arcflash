@@ -16,19 +16,16 @@ from __future__ import print_function
 # Program a .svf file into the CPLD on the standalone_cartridge_programmer
 # board
 
-import simple_cpld_programmer
 import sys
 import time
 
+import arcflash.port
 
-assert sys.version_info[0] >= 3, "Python 3+ required"
 
-
-def main():
-    svf_fn, = sys.argv[1:]
+def program(svf_fn):
     svf = open(svf_fn, "rb").read() + b"\n\x04"
 
-    with simple_cpld_programmer.Port() as ser:
+    with arcflash.port.Port() as ser:
         # print("Serial port opened:", ser)
 
         while True:
@@ -104,6 +101,3 @@ def main():
         total_sleep_time = SLEEP_TIME * sleep_count
         if total_sleep_time > 0.3:
             print("Slept for %.2f s total" % total_sleep_time)
-
-if __name__ == '__main__':
-    main()

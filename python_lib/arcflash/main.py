@@ -17,6 +17,7 @@ import os
 import sys
 import re
 
+from . import program_cpld
 from . import uploader
 
 def main():
@@ -27,6 +28,10 @@ def main():
     upload_parser = subparsers.add_parser('upload', help='Upload a flash image file to a connected Arcflash board')
     upload_parser.add_argument('filename', help='Path to the flash image file to upload')
     # TODO ' (optionally path@offset+length)'
+
+    # 'arcflash program-cpld'
+    program_cpld_parser = subparsers.add_parser('program-cpld', help='Program CPLD on a connected Arcflash board')
+    program_cpld_parser.add_argument('filename', help='Path to the SVF file to upload')
 
     args = parser.parse_args()
 
@@ -49,6 +54,10 @@ def main():
 
         uploader.upload(filename, image, offset, length)
         return 0
+
+    if args.command == 'program-cpld':
+        # Program CPLD.
+        return program_cpld.program(args.filename)
 
     parser.print_help()
     return 1
