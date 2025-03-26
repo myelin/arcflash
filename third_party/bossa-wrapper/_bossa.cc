@@ -49,70 +49,21 @@
 
 using namespace std;
 
-class BossaConfig
+struct BossaConfig
 {
-public:
-    BossaConfig();
-    virtual ~BossaConfig() {}
-
+    string portPath;
     bool erase;
     bool write;
     bool read;
     bool verify;
-    bool offset;
+    int offset;
     bool reset;
-    bool port;
     bool boot;
-    bool bor;
-    bool bod;
-    bool lock;
-    bool unlock;
-    bool security;
+    int bootArg;
     bool info;
     bool debug;
-    bool usbPort;
-    bool arduinoErase;
-    bool help;
-    bool version;
-
-    int readArg;
-    int offsetArg;
-    string portArg;
-    int bootArg;
-    int bodArg;
-    int borArg;
-    string lockArg;
-    string unlockArg;
-    bool usbPortArg;
+    bool arduinoReset;
 };
-
-BossaConfig::BossaConfig()
-{
-    erase = false;
-    write = false;
-    read = false;
-    verify = false;
-    port = false;
-    boot = false;
-    bod = false;
-    bor = false;
-    lock = false;
-    security = false;
-    info = false;
-    usbPort = false;
-    arduinoErase = false;
-    help = false;
-    version = false;
-
-    readArg = 0;
-    offsetArg = 0;
-    bootArg = 1;
-    bodArg = 1;
-    borArg = 1;
-    usbPortArg=1;
-
-    reset = false;
-}
 
 class BossaObserver : public FlasherObserver
 {
@@ -163,8 +114,6 @@ BossaObserver::onProgress(int num, int div)
     _lastTicks = 0;
 }
 
-static BossaConfig config;
-
 static struct timeval start_time;
 
 void
@@ -188,24 +137,20 @@ program_device(const char* port, const char* filename)
     //
     // bossac -i -d --port=cu.usbmodem1101 -U --offset=0x2000 -w -v "./firmware.ino.bin" -R
 
-    BossaConfig config;
-    config.erase = false;
-    config.write = true;  // -w
-    config.read = false;
-    config.verify = true;  // -v
-    config.offset = true;
-    config.offsetArg = 0x2000;  // --offset
-    config.port = true;
-    config.portArg = port;
-    config.bodArg = false;
-    config.borArg = false;
-    config.unlock = false;
-    config.security = false;
-    config.info = true;  // -i
-    config.debug = true;  // -d
-    config.usbPort = config.usbPortArg = true;  // -U
-    config.reset = true;  // -R
-    config.arduinoErase = true;
+    BossaConfig config = {
+        .portPath = port,
+        .erase = false,
+        .write = true,
+        .read = false,
+        .verify = true,
+        .offset = 0x2000,
+        .reset = true,
+        .boot = false,
+        .bootArg = 0,
+        .info = true,
+        .debug = true,
+        .arduinoReset = true,
+    };
 
     try
     {
@@ -215,13 +160,10 @@ program_device(const char* port, const char* filename)
         if (config.debug)
             samba.setDebug(true);
 
-        if (!config.port)
-            config.portArg = portFactory.def();
-
-        if (config.arduinoErase)
+        if (config.arduinoReset)
         {
             SerialPort::Ptr port;
-            port = portFactory.create(config.portArg, config.usbPortArg != 0);
+            port = portFactory.create(config.portPath, true);
 
             printf("Arduino 1200 baud reset\n");
             if(!port->open(1200))
@@ -241,20 +183,15 @@ program_device(const char* port, const char* filename)
                 printf("Arduino reset done\n");
         }
 
-        if (config.portArg.empty())
+        if (config.portPath.empty())
         {
             fprintf(stderr, "No serial ports available\n");
             return 1;
         }
 
-        bool res;
-        if (config.usbPort)
-            res = samba.connect(portFactory.create(config.portArg, config.usbPortArg != 0));
-        else
-            res = samba.connect(portFactory.create(config.portArg));
-        if (!res)
+        if (!samba.connect(portFactory.create(config.portPath, true)))
         {
-            fprintf(stderr, "No device found on %s\n", config.portArg.c_str());
+            fprintf(stderr, "No device found on %s\n", config.portPath.c_str());
             return 1;
         }
 
@@ -273,20 +210,17 @@ program_device(const char* port, const char* filename)
             info.print();
         }
 
-        if (config.unlock)
-            flasher.lock(config.unlockArg, false);
-
         if (config.erase)
         {
             timer_start();
-            flasher.erase(config.offsetArg);
+            flasher.erase(config.offset);
             printf("\nDone in %5.3f seconds\n", timer_stop());
         }
 
         if (config.write)
         {
             timer_start();
-            flasher.write(filename, config.offsetArg);
+            flasher.write(filename, config.offset);
             printf("\nDone in %5.3f seconds\n", timer_stop());
         }
 
@@ -296,7 +230,7 @@ program_device(const char* port, const char* filename)
             uint32_t totalErrors;
 
             timer_start();
-            if (!flasher.verify(filename, pageErrors, totalErrors, config.offsetArg))
+            if (!flasher.verify(filename, pageErrors, totalErrors, config.offset))
             {
                 printf("\nVerify failed\nPage errors: %d\nByte errors: %d\n",
                     pageErrors, totalErrors);
@@ -309,7 +243,7 @@ program_device(const char* port, const char* filename)
         if (config.read)
         {
             timer_start();
-            flasher.read(filename, config.readArg, config.offsetArg);
+            flasher.read(filename, 0, config.offset);
             printf("\nDone in %5.3f seconds\n", timer_stop());
         }
 
@@ -318,27 +252,6 @@ program_device(const char* port, const char* filename)
             printf("Set boot flash %s\n", config.bootArg ? "true" : "false");
             flash->setBootFlash(config.bootArg);
         }
-
-        if (config.bod)
-        {
-            printf("Set brownout detect %s\n", config.bodArg ? "true" : "false");
-            flash->setBod(config.bodArg);
-        }
-
-        if (config.bor)
-        {
-            printf("Set brownout reset %s\n", config.borArg ? "true" : "false");
-            flash->setBor(config.borArg);
-        }
-
-        if (config.security)
-        {
-            printf("Set security\n");
-            flash->setSecurity();
-        }
-
-        if (config.lock)
-            flasher.lock(config.lockArg, true);
 
         flash->writeOptions();
 
