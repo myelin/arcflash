@@ -29,8 +29,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-license = "Apache-2.0"
-license-files = ["LICENSE"]
+license = "Apache-2.0 AND BSD-3-Clause"
+license-files = ["LICENSE", "../third_party/bossa/LICENSE"]
 dependencies = [
     "protobuf",
     "PySerial",
