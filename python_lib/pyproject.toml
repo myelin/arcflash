@@ -51,7 +51,7 @@ name = "arcflash._bossa"
 extra-compile-args = ["-Wno-unqualified-std-cast-call"]
 include-dirs = ["../third_party/bossa/src"]
 sources = [
-    "_bossa.cc",
+    "../third_party/bossa-wrapper/_bossa.cc",
     "../third_party/bossa/src/Samba.cpp",
     "../third_party/bossa/src/Flash.cpp",
     "../third_party/bossa/src/D5xNvmFlash.cpp",
