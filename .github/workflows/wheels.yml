@@ -1,7 +1,10 @@
 name: Build wheels
 
+# Run on every git push.
+on: push
+
 # Only run manually.
-on: workflow_dispatch
+# on: workflow_dispatch
 
 jobs:
   build_wheels:
