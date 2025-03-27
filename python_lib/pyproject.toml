@@ -68,5 +68,5 @@ sources = [
 ]
 
 [tool.cibuildwheel]
-# Disable building PyPy wheels on all platforms
-skip = "pp*"
+# Disable building PyPy and musllinux wheels.
+skip = ["pp*", "*musllinux*"]
