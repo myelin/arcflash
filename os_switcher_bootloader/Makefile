@@ -33,9 +33,11 @@ LDFLAGS = -nostdlib
 # needed from arm-trusted-firmware?
 # -lgcc
 
-.PHONY: default all clean
+.PHONY: default all build clean
 
-default: all
+default: build
+
+build: all
 
 clean:
 	make -C ../third_party/nanopb/generator/proto clean
@@ -117,7 +119,7 @@ rpc_boot.elf: $(RPC_BOOT_OBJS)
 	ls -al $@
 
 arcflash.rom: risc_os.bin arc_boot.bin rpc_boot.bin
-	python merge_binaries.py $@
+	python3 merge_binaries.py $@
 	# to make addresses correct for Arc: --adjust-vma=0x03800000
 	# to make addresses correct for RPC: --adjust-vma=0xfc000000
 	$(OBJDUMP) -D -bbinary -marm -Mno-force-thumb -Mreg-names-raw --adjust-vma=0x03800000 $@ > arcflash.list
