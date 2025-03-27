@@ -19,10 +19,9 @@
 # its ATSAMD21.
 
 import re
-import sys
 import time
 
-from . import afserial
+import arcflash.port
 
 def read_until(ser, match):
     resp = b''
@@ -40,7 +39,7 @@ def read_until(ser, match):
 def upload(rom_fn, rom, upload_offset=None, upload_length=None):
     """Upload `upload_length` bytes from image `rom` at offset `upload_offset`."""
 
-    with afserial.Port() as ser:
+    with arcflash.port.Port() as ser:
         print("\n* Port open.  Giving it a kick, and waiting for OK.")
         ser.write(b"\n")
         r = read_until(ser, b"OK")
