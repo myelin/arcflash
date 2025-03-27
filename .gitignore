@@ -1,13 +1,22 @@
-.dropbox
-Icon?
-*.o
-*.so
-*.pyc
+# Editor/SCM
 *.bak
+*.rej
+*-backups
 *-bak
 *~
+
+# System junk
+.dropbox
 .DS_Store
+Icon?
+
+# Build artifacts
+*.o
+*.pyc
+*.so
+*.whl
 cpld/out
+cpld/sim_build
 cpld_tmp
 gerber_tmp
 build-leonardo
