@@ -30,7 +30,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 license = "Apache-2.0 AND BSD-3-Clause"
-license-files = ["LICENSE", "../third_party/bossa/LICENSE"]
+license-files = ["LICENSE", "bossa/LICENSE"]
 dependencies = [
     "protobuf",
     "PySerial",
@@ -49,20 +49,20 @@ package-dir = { "arcflash" = "arcflash" }
 [[tool.setuptools.ext-modules]]
 name = "arcflash._bossa"
 extra-compile-args = ["-Wno-unqualified-std-cast-call"]
-include-dirs = ["../third_party/bossa/src"]
+include-dirs = ["bossa/src"]
 sources = [
-    "../third_party/bossa-wrapper/_bossa.cc",
-    "../third_party/bossa/src/Samba.cpp",
-    "../third_party/bossa/src/Flash.cpp",
-    "../third_party/bossa/src/D5xNvmFlash.cpp",
-    "../third_party/bossa/src/D2xNvmFlash.cpp",
-    "../third_party/bossa/src/EfcFlash.cpp",
-    "../third_party/bossa/src/EefcFlash.cpp",
-    "../third_party/bossa/src/Applet.cpp",
-    "../third_party/bossa/src/WordCopyApplet.cpp",
-    "../third_party/bossa/src/WordCopyArm.cpp",
-    "../third_party/bossa/src/Flasher.cpp",
-    "../third_party/bossa/src/Device.cpp",
-    "../third_party/bossa/src/PosixSerialPort.cpp",
-    "../third_party/bossa/src/OSXPortFactory.cpp",
+    "bossa-wrapper/_bossa.cc",
+    "bossa/src/Samba.cpp",
+    "bossa/src/Flash.cpp",
+    "bossa/src/D5xNvmFlash.cpp",
+    "bossa/src/D2xNvmFlash.cpp",
+    "bossa/src/EfcFlash.cpp",
+    "bossa/src/EefcFlash.cpp",
+    "bossa/src/Applet.cpp",
+    "bossa/src/WordCopyApplet.cpp",
+    "bossa/src/WordCopyArm.cpp",
+    "bossa/src/Flasher.cpp",
+    "bossa/src/Device.cpp",
+    "bossa/src/PosixSerialPort.cpp",
+    "bossa/src/OSXPortFactory.cpp",
 ]
