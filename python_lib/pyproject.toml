@@ -66,3 +66,7 @@ sources = [
     "bossa/src/PosixSerialPort.cpp",
     "bossa/src/OSXPortFactory.cpp",
 ]
+
+[tool.cibuildwheel]
+# Disable building PyPy wheels on all platforms
+skip = "pp*"
