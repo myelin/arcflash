@@ -17,10 +17,6 @@ import shutil
 import subprocess
 import sys
 
-import serial.tools.list_ports
-
-assert sys.version_info[0] >= 3, "Python 3+ required"
-
 def cmd(s):
     print(s)
     return subprocess.check_call(s, shell=True)
@@ -41,36 +37,6 @@ arduino_cli = os.environ.get("ARDUINO_CLI", "arduino-cli")
 
 # std_args = "--verbose --fqbn arduino:samd:adafruit_circuitplayground_m0"
 std_args = "--verbose --fqbn myelin:samd:arcflash --config-dir ."
-
-# Figure out where the Arcflash is plugged in
-upload_port = arcflash_port = circuitplay_port = None
-for port in serial.tools.list_ports.comports():
-    print(port.device,
-        port.product,
-        port.hwid,
-        port.vid,
-        port.pid,
-        port.manufacturer,  # "Adafruit"
-    )
-    if port.vid == 0x1209 and port.pid == 0xFE07:
-        print("Found an Arcflash at %s" % port.device)
-        arcflash_port = port.device
-    elif port.vid == 0x239A and port.pid in (0x0018, 0x8018):
-        print("Found a Circuit Playground Express at %s" % port.device)
-        circuitplay_port = port.device
-
-if "ARCFLASH_PORT" in os.environ:
-    upload_port = os.environ["ARCFLASH_PORT"]
-    print("Using %s from ARCFLASH_PORT environment variable" % upload_port)
-elif arcflash_port:
-    upload_port = arcflash_port
-elif circuitplay_port:
-    raise Exception("No Arcflash found, only a Circuit Playground Express.  Is this an Arcflash running the old bootloader?  Update the bootloader then try programming firmware again.")
-
-if not upload_port:
-    raise Exception("Could not find a connected Arcflash")
-
-print("Using %s as the upload port" % upload_port)
 
 # Make sure we have the libxsvf submodule.
 xsvf_path = "../third_party/libxsvf"
@@ -107,17 +73,3 @@ cmd("%s compile %s %s --libraries lib --build-path %s" % (
 ))
 
 cmd(f"cp -v {build_path}/firmware.ino.bin ./")
-
-if upload_port == 'none':
-    print("Skipping uploading as upload_port == none")
-else:
-    # And upload to the Arcflash board
-    cmd("%s upload %s --port %s --input-file firmware.ino.bin" % (
-        arduino_cli,
-        std_args,
-        upload_port,
-    ))
-
-    print("\n"
-          "Done!  If you get a popup about ARCBOOT not being ejected properly, ignore it;\n"
-          "it's a side effect of the UF2 bootloader resetting after the download.")

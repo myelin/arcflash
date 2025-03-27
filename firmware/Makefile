@@ -1,14 +1,13 @@
-default: build
+default: build upload
 
 # Clean build, for releases.
 release:
-	ARCFLASH_PORT=none python3 build_and_upload.py
+	python3 build.py
 
 # Cached build, for development.
 build:
-	ARCFLASH_PORT=none ARCFLASH_CACHE=1 python3 build_and_upload.py
+	ARCFLASH_CACHE=1 python3 build.py
 
-# Perform a clean build, then upload to connected board.
-# TODO make this just upload.
+# Upload the last build.
 upload:
-	python3 build_and_upload.py
+	arcflash program-mcu firmware.ino.bin

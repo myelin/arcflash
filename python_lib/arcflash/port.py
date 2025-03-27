@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 # Copyright 2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,25 +14,51 @@ from __future__ import print_function
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import serial
 import serial.tools.list_ports
 
+
 def guess_port():
-    # Try to detect a connected Arduino-like device
-    arcflash_port = circuitplay_port = None
+    """Find USB serial port for a connected Arcflash."""
+
+    if "ARCFLASH_PORT" in os.environ:
+        upload_port = os.environ["ARCFLASH_PORT"]
+        print("Using %s from ARCFLASH_PORT environment variable" % upload_port)
+        return upload_port
+
+    circuitplay_port = None
     for port in serial.tools.list_ports.comports():
-        print(port.device,
+        print(
+            port.device,
             port.product,
             port.hwid,
             port.vid,
             port.pid,
             port.manufacturer,
         )
-        if not port.vid:
-            # Virtual device -- this isn't it
-            continue
-        print("Found something that looks like a serial port at %s" % port.device)
-        return port.device
+
+        # If we find an Arcflash, we're done!
+        if port.vid == 0x1209 and port.pid == 0xFE07:
+            print("Found an Arcflash at %s" % port.device)
+            return port.device
+
+        # Found a Circuit Playground Express, which is what Arcflash used to look like.
+        if port.vid == 0x239A and port.pid in (0x0018, 0x8018):
+            print("Found a Circuit Playground Express at %s" % port.device)
+            circuitplay_port = port.device
+
+    # Didn't find an Arcflash :(
+    if circuitplay_port:
+        raise Exception(
+            "No Arcflash found, only a Circuit Playground Express.  "
+            "Is this an Arcflash running the old bootloader?  Update "
+            "the bootloader then try programming firmware again."
+        )
+
+    return None
+
 
 class Port:
     def __init__(self):
@@ -48,4 +75,3 @@ class Port:
 
     def __exit__(self, type, value, traceback):
         self.ser.close()
-

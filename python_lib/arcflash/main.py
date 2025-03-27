@@ -50,7 +50,14 @@ def main():
         if not port:
             print("Could not guess serial port")
             return 1
-        return arcflash._bossa.program(port, args.filename)
+        r = arcflash._bossa.program(port, args.filename)
+        if r:
+            return 1
+
+        print("\n"
+            "Done!  If you get a popup about ARCBOOT not being ejected properly, ignore it;\n"
+            "it's a side effect of the UF2 bootloader resetting after the download.")
+        return 0
 
     if args.command == 'upload':
         # Upload something into flash.
