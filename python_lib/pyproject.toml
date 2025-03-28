@@ -46,27 +46,6 @@ arcflash = "arcflash.main:main"
 [tool.setuptools]
 package-dir = { "arcflash" = "arcflash" }
 
-[[tool.setuptools.ext-modules]]
-name = "arcflash._bossa"
-extra-compile-args = ["-Wno-unqualified-std-cast-call"]
-include-dirs = ["bossa/src"]
-sources = [
-    "bossa-wrapper/_bossa.cc",
-    "bossa/src/Samba.cpp",
-    "bossa/src/Flash.cpp",
-    "bossa/src/D5xNvmFlash.cpp",
-    "bossa/src/D2xNvmFlash.cpp",
-    "bossa/src/EfcFlash.cpp",
-    "bossa/src/EefcFlash.cpp",
-    "bossa/src/Applet.cpp",
-    "bossa/src/WordCopyApplet.cpp",
-    "bossa/src/WordCopyArm.cpp",
-    "bossa/src/Flasher.cpp",
-    "bossa/src/Device.cpp",
-    "bossa/src/PosixSerialPort.cpp",
-    "bossa/src/OSXPortFactory.cpp",
-]
-
 [tool.cibuildwheel]
 # Disable building PyPy and musllinux wheels.
 skip = ["pp*", "*musllinux*"]
