@@ -39,8 +39,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <sys/time.h>
-#include <unistd.h>
+
+#include <chrono>
+#include <thread>
 
 #include "Samba.h"
 #include "PortFactory.h"
@@ -114,20 +115,20 @@ BossaObserver::onProgress(int num, int div)
     _lastTicks = 0;
 }
 
-static struct timeval start_time;
+static std::chrono::time_point<std::chrono::steady_clock> start_time;
 
 void
 timer_start()
 {
-    gettimeofday(&start_time, NULL);
+    start_time = std::chrono::steady_clock::now();
 }
 
 float
 timer_stop()
 {
-    struct timeval end;
-    gettimeofday(&end, NULL);
-    return (end.tv_sec - start_time.tv_sec) + (end.tv_usec - start_time.tv_usec) / 1000000.0;
+    auto end = std::chrono::steady_clock::now();
+    float microseconds = (float)std::chrono::duration_cast<std::chrono::microseconds>(end - start_time).count();
+    return microseconds / 1000000.0;
 }
 
 int
@@ -177,7 +178,7 @@ program_device(const char* port, const char* filename)
             port->close();
 
             // wait for chip to reboot and USB port to re-appear
-            sleep(1);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
 
             if (config.debug)
                 printf("Arduino reset done\n");
