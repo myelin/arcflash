@@ -127,6 +127,11 @@ enum class SpiPortState {
 };
 SpiPortState spi_port_state = SpiPortState::NOTHING_SELECTED;
 
+#define WAIT_FOR_SERIAL_OR_BREAK() \
+  while (!Serial.available()) { \
+    if (check_disconnect()) break; \
+  }
+
 // Set MOSI/SCK/MISO/SS pins up for SPI comms with CPLD
 void select_spi() {
   if (spi_port_state == SpiPortState::SPI_SELECTED) return;
@@ -438,6 +443,32 @@ bool check_disconnect() {
   // remote has disconnected -- reset everything / keep it reset
   reset();
   return true;
+}
+
+bool read_uint32_from_serial(uint32_t &value) {
+  // Nothing received yet.
+  bool empty = true;
+
+  value = 0;
+  while (true) {
+    WAIT_FOR_SERIAL_OR_BREAK();
+    if (isdigit(Serial.peek())) {
+      // Accumulate digit into value.
+      value = (value * 10) + (Serial.read() - '0');
+      empty = false;
+      continue;
+    }
+    // Not a digit.
+    if (empty) {
+      // Nothing received :(
+      return false;
+    }
+    // We've received at least one digit, so we have a valid uint32_t.
+    return true;
+  }
+
+  // Disconnected.
+  return false;
 }
 
 // request bytes from remote; range_start and range_end are word addresses
@@ -962,14 +993,41 @@ void loop() {
         break;
       }
       case 'P': {
-        while (!Serial.available()) {
-          if (check_disconnect()) break;
-        }
-        if (Serial.read() != '\n') break;
+        // P <start_addr> <end_addr>\n
         chip_end = chip_size();
-        Serial.print("Program whole chip.  Size = ");
-        Serial.println(chip_end);
-        program_range(0, chip_end / 4);  // Program chip_end/4 words
+        WAIT_FOR_SERIAL_OR_BREAK();
+        switch (Serial.read()) {
+          case '\n': {
+            // Program whole chip.
+            Serial.print("Program whole chip; chip size = ");
+            Serial.println(chip_end);
+            program_range(0, chip_end / 4);
+            break;
+          }
+          case ' ': {
+            Serial.println("Program range");
+            // Program range.
+            uint32_t start_addr = 0, end_addr = 0;
+            if (!read_uint32_from_serial(start_addr)) break;
+            Serial.println(start_addr);
+            // Don't need to wait for serial after read_uint32_from_serial.
+            if (Serial.read() != ' ') break;
+            if (!read_uint32_from_serial(end_addr)) break;
+            Serial.println(end_addr);
+            // Don't need to wait for serial after read_uint32_from_serial.
+            if (Serial.read() != '\n') break;
+            Serial.print("Program from ");
+            Serial.print(start_addr);
+            Serial.print(" to ");
+            Serial.print(end_addr);
+            Serial.print("; chip size = ");
+            Serial.println(chip_end);
+            program_range(start_addr / 4, end_addr / 4);
+            break;
+          }
+          default:
+            break;
+        }
         reset();
         break;
       }

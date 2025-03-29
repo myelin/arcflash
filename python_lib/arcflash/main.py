@@ -63,12 +63,11 @@ def main():
         # Upload something into flash.
 
         # Read image to upload.
-        filename, offset, length = args.filename, None, None
-        # TODO implement "program range" command, then enable below code:
-        # m = re.search(r"(.*?)(?:@(\d+)(?:(\+(\d+))))", args.filename)
-        # filename, offset, length = m.groups()
-        # offset = int(offset) if offset else None
-        # length = int(length) if length else None
+        m = re.fullmatch(r"(.*?)(?:\@(\d+)(?:\+(\d+))?)?", args.filename)
+        print(m.groups())
+        filename, offset, length = m.groups()
+        offset = int(offset) if offset else None
+        length = int(length) if length else None
         if not os.path.exists(filename):
             print(f"Flash image file {filename} not found")
             return 1

@@ -52,17 +52,17 @@ def upload(rom_fn, rom, upload_offset=None, upload_length=None):
             raise Exception("Chip identification failed")
         chip_size = int(m.group(1))
         print("\n* Chip size = %d bytes" % chip_size)
-        usb_block_size = 63 if (chip_size < 1048576) else 1024  # atmega32u4 can't handle big usb chunks, but atsamd21 can
+        usb_block_size = 1024
 
         if upload_offset is None and upload_length is None:
             upload_offset = 0
             upload_length = len(rom)
 
-        # For now, we can only program the entire chip.
-        if upload_length != chip_size:
+        # Check that the image won't overrun the chip.
+        if upload_offset + upload_length > chip_size:
             raise Exception(
-                "%s is %d bytes long, which does not match the flash capacity of %d bytes" % (
-                    rom_fn, upload_length, chip_size))
+                f"Can't program {rom_fn} from {upload_offset} to {upload_offset + upload_length} "
+                f"as it won't fit in the chip ({chip_size} B capacity)")
 
         # Upload must begin inside the flash.
         assert 0 <= upload_offset <= chip_size
@@ -70,9 +70,7 @@ def upload(rom_fn, rom, upload_offset=None, upload_length=None):
         assert 0 <= upload_length <= chip_size - upload_offset
 
         print("\n* Start programming process")
-        # TODO make a "program range" command.
-        # ser.write("P {upload_offset} {upload_length}\n")  # program range
-        ser.write(b"P\n")  # program chip
+        ser.write(f"P {upload_offset} {upload_length}\n".encode())  # program range
 
         input_buf = b''
         done = 0
@@ -93,11 +91,9 @@ def upload(rom_fn, rom, upload_offset=None, upload_length=None):
                 start, size = int(m.group(1)), int(m.group(2))
                 print("* [%.1f%%] Sending data from %d-%d" % (start * 100.0 / len(rom), start, start+size))
                 blk = rom[start:start+size]
-                #print `blk[:64]`
                 while len(blk):
                     n = ser.write(blk[:usb_block_size])
                     if n:
                         blk = blk[n:]
-                        #print("wrote %d bytes" % n)
                     else:
                         time.sleep(0.01)
