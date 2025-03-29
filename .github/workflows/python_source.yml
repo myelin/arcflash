@@ -1,0 +1,23 @@
+name: Build python_lib source
+
+on: push
+
+jobs:
+  build_sdist:
+    name: Build python_lib source
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build source
+        run: |
+          python3 -m pip install build
+          python3 -m build python_lib --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python_lib_src
+          path: python_lib/dist/*.tar.gz
