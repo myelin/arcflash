@@ -51,9 +51,9 @@ def guess_port():
 
     # Didn't find an Arcflash :(
     if circuitplay_port:
-        raise Exception(
-            "No Arcflash found, only a Circuit Playground Express.  "
-            "Is this an Arcflash running the old bootloader?  Update "
+        print(
+            "No Arcflash found, only a Circuit Playground Express.\n"
+            "Is this an Arcflash running the old bootloader?  Update\n"
             "the bootloader then try programming firmware again."
         )
 

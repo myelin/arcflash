@@ -47,5 +47,7 @@ arcflash = "arcflash.main:main"
 package-dir = { "arcflash" = "arcflash" }
 
 [tool.cibuildwheel]
+before-test = "pip install pytest"
+test-command = "pytest {package}/tests"
 # Disable building PyPy and musllinux wheels.
 skip = ["pp*", "*musllinux*"]
