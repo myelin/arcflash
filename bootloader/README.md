@@ -23,3 +23,12 @@ To rebuild:
 ~~~
 make clean build
 ~~~
+
+To erase an unresponsive Arcflash, try this.  The `erase` command by itself won't work, as the UF2
+bootloader locks the first 0x2000 bytes.
+
+~~~
+JLinkExe -device ATSAMD21G18 -if swd -speed 1000
+connect
+erase 0x2000,0x40000
+~~~
