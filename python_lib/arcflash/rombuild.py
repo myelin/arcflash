@@ -243,37 +243,46 @@ def FlashImage(roms,
             (b"\xff" * (bootloader_bank_size - len(bootloader_binary)))
         )
     else:
-        bootloader_size = 384 * 1024
-        # The bootloader goes at the start of first 384k, and the encoded
-        # descriptor followed by a length word goes at the end.  We can't put this
-        # in until the end though, as it contains a hash of the rest of the flash
-        # data.
+        # Memory map:
+        # 0    - bootloader
+        #      - padding (0xff)
+        # 384k - descriptor
+        #      - padding (0xff)
+        # 512k - end
+        bootloader_size = 512 * 1024
+        descriptor_size = 128 * 1024  # Don't need this much, but it's one flash sector.
+        descriptor_pos = bootloader_size - descriptor_size
+
+        # Binaries to pack into this flash bank.
         bootloader_binary = pkg_resources.resource_string(__name__, "bootloader.bin")
         descriptor_binary = descriptor.SerializeToString()
 
-        assert len(bootloader_binary) + len(descriptor_binary) + 4 < bootloader_size, \
-            "Bootloader binary plus descriptor won't fit in %sk - need to change memory map" % (bootloader_size/1024)
-        padding_between_bootloader_and_descriptor_size = bootloader_size - len(bootloader_binary) - len(descriptor_binary) - 4
-        padding_after_descriptor_size = bootloader_bank_size - bootloader_size
+        assert len(bootloader_binary) < descriptor_pos, \
+            "Bootloader binary plus descriptor won't fit in %sk - need to change memory map" % (descriptor_pos/1024)
+        padding_after_bootloader_size = descriptor_pos - len(bootloader_binary)
+        padding_after_descriptor_size = descriptor_size - len(descriptor_binary) - 4
+        padding_after_everything_size = 1024 * 1024 - bootloader_size
 
         bootloader_bank = (
             # Start with the binary
             bootloader_binary +
             # Then padding to make binary + padding + descriptor + length == 384k
-            (b"\xff" * padding_between_bootloader_and_descriptor_size) +
+            (b"\xff" * padding_after_bootloader_size) +
             descriptor_binary +
+            (b"\xff" * padding_after_descriptor_size) +
             struct.pack("<i", len(descriptor_binary)) +
-            # Then padding to 1M (which in future will also contain CMOS data)
-            (b"\xff" * padding_after_descriptor_size)
+            # Then padding to 1M (reserved for expansion)
+            (b"\xff" * padding_after_everything_size)
         )
         print("Bootloader bank contents:")
         blk_ptr = 0
         for blk_desc, blk_size in (
             ("Bootloader", len(bootloader_binary)),
-            ("Padding", padding_between_bootloader_and_descriptor_size),
+            ("Padding", padding_after_bootloader_size),
             ("Descriptor", len(descriptor_binary)),
-            ("Descriptor length", 4),
             ("Padding", padding_after_descriptor_size),
+            ("Descriptor length", 4),
+            ("Padding", padding_after_everything_size),
         ):
             print(f"- {blk_ptr:08X}: {blk_desc} ({blk_size} B)")
             blk_ptr += blk_size
@@ -315,4 +324,4 @@ def FlashImage(roms,
 
     if cmd == 'upload':
         print("Uploading to flash")
-        uploader.upload("Generated image", flash, offset=None, length=None)
+        uploader.upload("Generated image", flash, upload_offset=None, upload_length=None)

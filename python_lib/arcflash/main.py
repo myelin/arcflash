@@ -64,7 +64,6 @@ def main():
 
         # Read image to upload.
         m = re.fullmatch(r"(.*?)(?:\@(\d+)(?:\+(\d+))?)?", args.filename)
-        print(m.groups())
         filename, offset, length = m.groups()
         offset = int(offset) if offset else None
         length = int(length) if length else None

@@ -39,6 +39,14 @@ def read_until(ser, match):
 def upload(rom_fn, rom, upload_offset=None, upload_length=None):
     """Upload `upload_length` bytes from image `rom` at offset `upload_offset`."""
 
+    # Flash sectors are 32768 words -- 64KiB per chip, or 128KiB for us.
+    SECTOR_SIZE = 32768 * 4
+
+    # Pad out to a full sector if necessary.
+    bytes_into_last_sector = len(rom) % SECTOR_SIZE
+    if bytes_into_last_sector:
+        rom += b"\xff" * (SECTOR_SIZE - bytes_into_last_sector)
+
     with arcflash.port.Port() as ser:
         print("\n* Port open.  Giving it a kick, and waiting for OK.")
         ser.write(b"\n")
@@ -54,8 +62,9 @@ def upload(rom_fn, rom, upload_offset=None, upload_length=None):
         print("\n* Chip size = %d bytes" % chip_size)
         usb_block_size = 1024
 
-        if upload_offset is None and upload_length is None:
+        if upload_offset is None:
             upload_offset = 0
+        if upload_length is None:
             upload_length = len(rom)
 
         # Check that the image won't overrun the chip.

@@ -17,8 +17,10 @@
 #define ARC_ROM_BASE 0x03800000L
 #define RPC_ROM_BASE 0xFC000000L
 
-// Bootloader ROM size
-#define BOOT_ROM_SIZE (384 * 1024)
+// Bootloader ROM size.
+#define BOOT_ROM_SIZE (512 * 1024)
+// Descriptor offset -- one flash sector before the end of the ROM.
+#define BOOT_ROM_DESCRIPTOR_OFFSET (BOOT_ROM_SIZE - 128 * 1024)
 
 // Acorn A3000 era system registers
 
