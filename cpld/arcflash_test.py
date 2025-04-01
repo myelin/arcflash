@@ -389,7 +389,7 @@ async def test_bitbang_serial_writes_from_mcu(dut):
         dut.flash1_DQ.value = 0
         dut.flash0_DQ.value = val
         dut.rom_A.value = 0xFFFFF
-        await tick()
+        await drop_rom_nCS_and_wait_to_settle(dut)
         assert dut.rom_D.value == val, (
             "ROM %d bit didn't pass through with disabled serial port" % val
         )
@@ -398,12 +398,21 @@ async def test_bitbang_serial_writes_from_mcu(dut):
     await spi_send(dut, [0x80, 0x00, 0x00, 0x00])
     assert dut.disable_serial_port.value == 0, "Failed to enable serial port"
 
-    # Verify that reads to 0xFFFFF return cpld_MOSI.
+    # Verify that reads to 0xFFFFF return cpld_MOSI, but reads to 0xFFFFD don't.
     for val in (0, 1):
+        dut.flash1_DQ.value = 0
+        dut.flash0_DQ.value = 1 - val
         dut.cpld_MOSI.value = val
+        # Check that the value on MOSI passes through to the host on 0xFFFFF.
         dut.rom_A.value = 0xFFFFF
         await drop_rom_nCS_and_wait_to_settle(dut)
         assert dut.rom_D.value == val, (
+            "MOSI %d bit didn't pass through with enabled serial port" % val
+        )
+        # Check that the value from the flash chips passes through on 0xFFFFD.
+        dut.rom_A.value = 0xFFFFD
+        await drop_rom_nCS_and_wait_to_settle(dut)
+        assert dut.rom_D.value == 1 - val, (
             "ROM %d bit didn't pass through with enabled serial port" % val
         )
 
