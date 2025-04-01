@@ -244,12 +244,12 @@ def FlashImage(roms,
         )
     else:
         # Memory map:
-        # 0    - bootloader
-        #      - padding (0xff)
-        # 384k - descriptor
-        #      - padding (0xff)
-        # 512k - end
-        bootloader_size = 512 * 1024
+        # 0     - bootloader
+        #       - padding (0xff)
+        # 896k  - descriptor: length word, followed by data.
+        #       - padding (0xff)
+        # 1024k - end
+        bootloader_size = 1024 * 1024
         descriptor_size = 128 * 1024  # Don't need this much, but it's one flash sector.
         descriptor_pos = bootloader_size - descriptor_size
 
@@ -261,28 +261,24 @@ def FlashImage(roms,
             "Bootloader binary plus descriptor won't fit in %sk - need to change memory map" % (descriptor_pos/1024)
         padding_after_bootloader_size = descriptor_pos - len(bootloader_binary)
         padding_after_descriptor_size = descriptor_size - len(descriptor_binary) - 4
-        padding_after_everything_size = 1024 * 1024 - bootloader_size
 
         bootloader_bank = (
             # Start with the binary
             bootloader_binary +
             # Then padding to make binary + padding + descriptor + length == 384k
             (b"\xff" * padding_after_bootloader_size) +
-            descriptor_binary +
-            (b"\xff" * padding_after_descriptor_size) +
             struct.pack("<i", len(descriptor_binary)) +
-            # Then padding to 1M (reserved for expansion)
-            (b"\xff" * padding_after_everything_size)
+            descriptor_binary +
+            (b"\xff" * padding_after_descriptor_size)
         )
         print("Bootloader bank contents:")
         blk_ptr = 0
         for blk_desc, blk_size in (
             ("Bootloader", len(bootloader_binary)),
             ("Padding", padding_after_bootloader_size),
+            ("Descriptor length", 4),
             ("Descriptor", len(descriptor_binary)),
             ("Padding", padding_after_descriptor_size),
-            ("Descriptor length", 4),
-            ("Padding", padding_after_everything_size),
         ):
             print(f"- {blk_ptr:08X}: {blk_desc} ({blk_size} B)")
             blk_ptr += blk_size

@@ -19,7 +19,7 @@
 
 void parse_descriptor_and_print_menu(uint32_t rom_base, arcflash_FlashDescriptor* desc) {
   // Descriptor size word at the end of the boot menu ROM area.
-  const uint32_t* descriptor_size = (uint32_t*)(rom_base + BOOT_ROM_SIZE - 4);
+  const uint32_t* descriptor_size = (uint32_t*)(rom_base + BOOT_ROM_DESCRIPTOR_OFFSET);
   // display_printf("descriptor size %08lx\n", *descriptor_size);
 
   if (*descriptor_size == 0xFFFFFFFFL) {
@@ -28,7 +28,7 @@ void parse_descriptor_and_print_menu(uint32_t rom_base, arcflash_FlashDescriptor
     while (1);  // Fatal error
   }
 
-  const uint8_t* descriptor_ptr = (uint8_t*)(rom_base + BOOT_ROM_DESCRIPTOR_OFFSET);
+  const uint8_t* descriptor_ptr = (uint8_t*)(rom_base + BOOT_ROM_DESCRIPTOR_OFFSET + 4);
   // display_printf("descriptor at %08lx\n", (uint32_t)descriptor);
 
   pb_istream_t stream = pb_istream_from_buffer(descriptor_ptr, *descriptor_size);

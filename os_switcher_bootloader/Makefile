@@ -124,5 +124,8 @@ arcflash.rom: risc_os.bin arc_boot.bin rpc_boot.bin
 	# to make addresses correct for RPC: --adjust-vma=0xfc000000
 	$(OBJDUMP) -D -bbinary -marm -Mno-force-thumb -Mreg-names-raw --adjust-vma=0x03800000 $@ > arcflash.list
 
+program: arcflash.rom
+	arcflash upload arcflash.rom
+
 ../python_lib/arcflash/bootloader.bin: arcflash.rom
 	cp $< $@
