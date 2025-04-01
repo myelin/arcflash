@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import argparse
+import importlib.resources
 import os
 import sys
 import re
@@ -35,7 +36,7 @@ def main():
 
     # 'arcflash program-mcu'
     program_mcu_parser = subparsers.add_parser('program-mcu', help='Program microcontroller firmware on a connected Arcflash board')
-    program_mcu_parser.add_argument('filename', help='Path to the .bin file to upload')
+    program_mcu_parser.add_argument('filename', nargs='?', help='Path to the .bin file to upload')
 
     # 'arcflash upload'
     upload_parser = subparsers.add_parser('upload', help='Upload a flash image file to a connected Arcflash board')
@@ -60,7 +61,12 @@ def main():
         if not port:
             print("Could not guess serial port")
             return 1
-        r = arcflash._bossa.program(port, args.filename)
+        if args.filename:
+            r = arcflash._bossa.program(port, args.filename)
+        else:
+            ref = importlib.resources.files('arcflash') / 'firmware.bin'
+            with importlib.resources.as_file(ref) as path:
+                r = arcflash._bossa.program(port, str(path))
         if r:
             return 1
 
