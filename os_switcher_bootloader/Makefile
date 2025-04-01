@@ -43,7 +43,7 @@ clean:
 	make -C ../third_party/nanopb/generator/proto clean
 	rm -vf *_boot.bin *.elf *.list *.o *.rom *.pb *.pb.* ../third_party/nanopb/*.o
 
-all: version arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootloader.bin
+all: version arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootmenu.bin
 
 version:
 	python3 make_version_h.py > version.h
@@ -127,5 +127,5 @@ arcflash.rom: risc_os.bin arc_boot.bin rpc_boot.bin
 program: arcflash.rom
 	arcflash upload arcflash.rom
 
-../python_lib/arcflash/bootloader.bin: arcflash.rom
+../python_lib/arcflash/bootmenu.bin: arcflash.rom
 	cp $< $@

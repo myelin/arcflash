@@ -1,2 +1,2 @@
-include arcflash/bootloader.bin
+include arcflash/bootmenu.bin
 include arcflash/firmware.bin

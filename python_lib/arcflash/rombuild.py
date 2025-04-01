@@ -14,9 +14,9 @@
 
 # Arcflash ROM builder
 
+import importlib.resources
 import hashlib
 import os
-import pkg_resources
 import struct
 import sys
 
@@ -34,7 +34,9 @@ _2M = _1M * 2
 _4M = _1M * 4
 
 def get_bootloader_binary():
-    return pkg_resources.resource_string(__name__, "bootloader.bin")
+    ref = importlib.resources.files('arcflash') / 'bootmenu.bin'
+    with ref.open('rb') as f:
+        return f.read()
 
 class ROM:
     def __init__(self, name, files, size=_2M, tag=None, cmos=None):
