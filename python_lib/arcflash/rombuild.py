@@ -33,6 +33,9 @@ _1M = 1024*1024
 _2M = _1M * 2
 _4M = _1M * 4
 
+def get_bootloader_binary():
+    return pkg_resources.resource_string(__name__, "bootloader.bin")
+
 class ROM:
     def __init__(self, name, files, size=_2M, tag=None, cmos=None):
         self.name, self.files, self.size, self.cmos, self.tag = \
@@ -254,7 +257,7 @@ def FlashImage(roms,
         descriptor_pos = bootloader_size - descriptor_size
 
         # Binaries to pack into this flash bank.
-        bootloader_binary = pkg_resources.resource_string(__name__, "bootloader.bin")
+        bootloader_binary = get_bootloader_binary()
         descriptor_binary = descriptor.SerializeToString()
 
         assert len(bootloader_binary) < descriptor_pos, \

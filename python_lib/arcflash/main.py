@@ -19,11 +19,15 @@ import re
 
 import arcflash._bossa
 import arcflash.program_cpld
+import arcflash.rombuild
 import arcflash.uploader
 
 def main():
     parser = argparse.ArgumentParser(description='Arcflash command line tool')
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # 'arcflash program-boot-menu'
+    program_cpld_parser = subparsers.add_parser('program-boot-menu', help='Program boot menu on a connected Arcflash board')
 
     # 'arcflash program-cpld'
     program_cpld_parser = subparsers.add_parser('program-cpld', help='Program CPLD on a connected Arcflash board')
@@ -39,6 +43,12 @@ def main():
     # TODO ' (optionally path@offset+length)'
 
     args = parser.parse_args()
+
+    if args.command == 'program-boot-menu':
+        # Program boot menu into the start of flash.
+        bootloader_binary = arcflash.rombuild.get_bootloader_binary()
+        arcflash.uploader.upload("boot menu", bootloader_binary)
+        return 0
 
     if args.command == 'program-cpld':
         # Program CPLD.
