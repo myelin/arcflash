@@ -22,6 +22,10 @@ POWER=low
 SHARED_PATH ?= ../common
 include ${SHARED_PATH}/Makefile.xilinx
 
+# TODO figure out how to integrate this with the build system.
+release:
+	cp *.svf ../python_lib/arcflash/cpld.svf
+
 test2: test
 	# Python + cocotb tests
 	make -fMakefile.test

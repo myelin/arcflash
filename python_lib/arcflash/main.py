@@ -32,7 +32,7 @@ def main():
 
     # 'arcflash program-cpld'
     program_cpld_parser = subparsers.add_parser('program-cpld', help='Program CPLD on a connected Arcflash board')
-    program_cpld_parser.add_argument('filename', help='Path to the SVF file to upload')
+    program_cpld_parser.add_argument('filename', nargs='?', help='Path to the SVF file to upload')
 
     # 'arcflash program-mcu'
     program_mcu_parser = subparsers.add_parser('program-mcu', help='Program microcontroller firmware on a connected Arcflash board')
@@ -53,7 +53,11 @@ def main():
 
     if args.command == 'program-cpld':
         # Program CPLD.
-        return arcflash.program_cpld.program(args.filename)
+        if args.filename:
+            return arcflash.program_cpld.program(args.filename)
+        ref = importlib.resources.files('arcflash') / 'cpld.svf'
+        with importlib.resources.as_file(ref) as path:
+            return arcflash.program_cpld.program(str(path))
 
     if args.command == 'program-mcu':
         # Program microcontroller firmware.
