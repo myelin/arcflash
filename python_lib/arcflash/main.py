@@ -19,6 +19,7 @@ import sys
 import re
 
 import arcflash._bossa
+import arcflash.config
 import arcflash.program_cpld
 import arcflash.rombuild
 import arcflash.uploader
@@ -27,8 +28,12 @@ def main():
     parser = argparse.ArgumentParser(description='Arcflash command line tool')
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
+    # 'arcflash config'
+    config_parser = subparsers.add_parser('config', help='Create or add to arcflash.toml configuration file')
+    config_parser.add_argument('roms', nargs='+', help='Path to ROM image files to add')
+
     # 'arcflash program-boot-menu'
-    program_cpld_parser = subparsers.add_parser('program-boot-menu', help='Program boot menu on a connected Arcflash board')
+    subparsers.add_parser('program-boot-menu', help='Program boot menu on a connected Arcflash board')
 
     # 'arcflash program-cpld'
     program_cpld_parser = subparsers.add_parser('program-cpld', help='Program CPLD on a connected Arcflash board')
@@ -44,6 +49,10 @@ def main():
     # TODO ' (optionally path@offset+length)'
 
     args = parser.parse_args()
+
+    if args.command == 'config':
+        arcflash.config.update_config(roms=args.roms)
+        return 0
 
     if args.command == 'program-boot-menu':
         # Program boot menu into the start of flash.
@@ -81,6 +90,12 @@ def main():
 
     if args.command == 'upload':
         # Upload something into flash.
+
+        if os.path.isdir(args.filename):
+            # It's a new-style directory containing an arcflash.toml.
+            image = arcflash.rombuild.build_rom_from_dir(args.filename)
+            arcflash.uploader.upload(args.filename, image)
+            return 0
 
         # Read image to upload.
         m = re.fullmatch(r"(.*?)(?:\@(\d+)(?:\+(\d+))?)?", args.filename)

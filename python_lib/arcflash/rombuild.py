@@ -17,6 +17,7 @@
 import importlib.resources
 import hashlib
 import os
+import stat
 import struct
 import sys
 
@@ -24,7 +25,8 @@ import sys
 # errors.
 os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
 from arcflash import arcflash_pb2
-from arcflash import uploader
+import arcflash.config
+import arcflash.uploader
 
 __all__ = ["_1M", "_2M", "_4M", "ROM", "FlashImage"]
 
@@ -32,6 +34,12 @@ _512k = 512*1024
 _1M = 1024*1024
 _2M = _1M * 2
 _4M = _1M * 4
+
+def round_size_up(size):
+    for bucket in (_512k, _1M, _2M, _4M):
+        if size <= bucket:
+            return bucket
+    return None
 
 def get_bootloader_binary():
     ref = importlib.resources.files('arcflash') / 'bootmenu.bin'
@@ -123,14 +131,14 @@ def switch_byte_order(data, byte_order):
         return data
 
     if byte_order == "2301":
-        # swap pairs of bytes (Risc PC adapter)
+        print("Swapping pairs of bytes (Risc PC adapter)")
         output = []
         for idx in range(0, len(data), 4):
             output.append(data[idx+2:idx+3] + data[idx+3:idx+4] + data[idx:idx+1] + data[idx+1:idx+2])
         return b"".join(output)
 
     if byte_order == "3210":
-        # reverse bytes in each word (A5000 adapter)
+        print("Reversing bytes in each word (A5000 adapter)")
         output = []
         for idx in range(0, len(data), 4):
             output.append(data[idx+3:idx+4] + data[idx+2:idx+3] + data[idx+1:idx+2] + data[idx:idx+1])
@@ -138,19 +146,11 @@ def switch_byte_order(data, byte_order):
 
     raise ValueError("Invalid byte_order value: %s" % byte_order)
 
-def FlashImage(roms,
-               byte_order="0123",
-               bootloader_512k=False,
-               bootloader_image_override=None,
-               skip_bootloader=False):
-    print("Arcflash ROM builder / image flasher\n")
-
-    args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
-    if len(args):
-        cmd = args.pop(0)
-    else:
-        cmd = 'build'
-
+def build_image(roms,
+                byte_order="0123",
+                bootloader_512k=False,
+                bootloader_image_override=None,
+                skip_bootloader=False):
     # Arcflash v1 has 16MB of flash
     flash_size = _1M * 16
     bootloader_bank_size = 0 if skip_bootloader else _1M
@@ -301,6 +301,27 @@ def FlashImage(roms,
     assert len(flash) <= flash_size, \
         "An error occurred: flash ended up %d bytes long and should be max %d" % (len(flash), flash_size)
 
+    return flash
+
+def FlashImage(roms,
+               byte_order="0123",
+               bootloader_512k=False,
+               bootloader_image_override=None,
+               skip_bootloader=False):
+    print("Arcflash ROM builder / image flasher\n")
+
+    args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
+    if len(args):
+        cmd = args.pop(0)
+    else:
+        cmd = 'build'
+
+    flash = build_image(roms=roms,
+                        byte_order=byte_order,
+                        bootloader_512k=bootloader_512k,
+                        bootloader_image_override=bootloader_image_override,
+                        skip_bootloader=skip_bootloader)
+
     # And save it!  (Or upload it)
     if cmd == 'save':
         if not len(args):
@@ -325,4 +346,26 @@ def FlashImage(roms,
 
     if cmd == 'upload':
         print("Uploading to flash")
-        uploader.upload("Generated image", flash, upload_offset=None, upload_length=None)
+        arcflash.uploader.upload("Generated image", flash, upload_offset=None, upload_length=None)
+
+def build_rom_from_dir(path):
+    print(f"Building ROM image from directory {path}")
+    conf = arcflash.config.Config(f"{path}/arcflash.toml")
+    roms = []
+    for conf_rom in conf.roms():
+        # Figure out how big a bank we need for this.
+        file_size = os.stat(conf_rom["path"])[stat.ST_SIZE]
+        rom_size = round_size_up(file_size)
+        if not rom_size:
+            raise Exception(f"ROM image {conf_rom['path']} is {file_size} bytes, which won't fit in a 4MB ROM space")
+
+        roms.append(ROM(
+            name=conf_rom["name"],
+            files=[conf_rom["path"]],
+            size=rom_size,
+            tag=conf_rom["tag"],
+        ))
+
+    return build_image(roms=roms,
+                       byte_order=conf.byte_order(),
+                       )

@@ -34,6 +34,7 @@ license-files = ["LICENSE", "bossa/LICENSE"]
 dependencies = [
     "protobuf==5.*",
     "PySerial",
+    "tomlkit",
 ]
 
 [project.urls]
