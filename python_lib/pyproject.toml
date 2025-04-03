@@ -32,7 +32,7 @@ classifiers = [
 license = "Apache-2.0 AND BSD-3-Clause"
 license-files = ["LICENSE", "bossa/LICENSE"]
 dependencies = [
-    "protobuf",
+    "protobuf==5.*",
     "PySerial",
 ]
 
