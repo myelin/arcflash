@@ -26,6 +26,8 @@ include ${SHARED_PATH}/Makefile.xilinx
 release:
 	cp *.svf ../python_lib/arcflash/cpld.svf
 
-test2: test
+test: icarus_test cocotb_test
+
+cocotb_test:
 	# Python + cocotb tests
 	make -fMakefile.test

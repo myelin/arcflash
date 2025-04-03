@@ -93,7 +93,9 @@ program-xc3sprog-jlink:
 
 # Test using Icarus Verilog (only works on Verilog projects)
 
-test:
+test: icarus_test
+
+icarus_test:
 	iverilog -o ${MODULE}_tb.vvp ${MODULE}_tb.v
 	vvp ${MODULE}_tb.vvp
 

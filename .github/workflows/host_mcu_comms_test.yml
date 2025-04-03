@@ -12,5 +12,4 @@ jobs:
 
       - name: Test
         run: |
-          cd host_mcu_comms
-          make test
+          make -C host_mcu_comms test

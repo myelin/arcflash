@@ -7,7 +7,7 @@ build:
 
 test:
 	make -C host_mcu_comms test
-	make -C cpld test2
+	make -C cpld test
 
 release:
 	make -C host_mcu_comms
