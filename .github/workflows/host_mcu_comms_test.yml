@@ -1,0 +1,16 @@
+name: Test host_mcu_comms
+
+on: push
+
+jobs:
+  test:
+    name: Test host_mcu_comms
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: |
+          cd host_mcu_comms
+          make test
