@@ -35,12 +35,12 @@ def generate_outputs(fn, fab_output_path, preview_output_path):
     options.SetOutputDirectory(fab_output_path)
 
     options.SetPlotFrameRef(False)
-    options.SetPlotPadsOnSilkLayer(False)
+    # options.SetPlotPadsOnSilkLayer(False)
     options.SetPlotValue(True)
     options.SetPlotReference(True)
-    options.SetPlotInvisibleText(False)
-    options.SetPlotViaOnMaskLayer(False)
-    options.SetExcludeEdgeLayer(True);
+    # options.SetPlotInvisibleText(False)
+    # options.SetPlotViaOnMaskLayer(False)
+    # options.SetExcludeEdgeLayer(True)
     options.SetMirror(False)
     options.SetNegative(False)
     options.SetUseAuxOrigin(False)
@@ -51,10 +51,10 @@ def generate_outputs(fn, fab_output_path, preview_output_path):
 
     options.SetFormat(PLOT_FORMAT_GERBER)
 
-    options.SetDrillMarksType(PCB_PLOT_PARAMS.NO_DRILL_SHAPE)
+    # options.SetDrillMarksType(PCB_PLOT_PARAMS.NO_DRILL_SHAPE)
     options.SetScale(1)
     options.SetPlotMode(FILLED)
-    options.SetLineWidth(FromMM(0.1))
+    # options.SetLineWidth(FromMM(0.1))
 
     # Plot everything needed for fabrication
     layers_to_plot = [

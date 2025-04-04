@@ -15,7 +15,7 @@
 # Include this file in your Makefile after defining NAME=<project name>
 
 # Also change ROOT if the board is not two levels down from the root
-ROOT?=../..
+ROOT?=..
 
 # Change SCHEMATIC if you are using a differently-named schematic file
 SCHEMATIC?=$(NAME).py
@@ -58,8 +58,10 @@ KICAD_ROOT=/Applications/KiCad/kicad.app
 
 $(OUTPUT_NAME).zip: $(NAME).kicad_pcb
 	rm -rf gerber_tmp
-	PYTHONPATH=$(KICAD_ROOT)/Contents/Frameworks/python/site-packages $(KICAD_ROOT)/Contents/Frameworks/Python.framework/Versions/Current/bin/python $(ROOT)/common/build_fab_outputs.py --layers $(LAYERS) $<
+	PYTHONPATH=$(KICAD_ROOT)/Contents/Frameworks/python/site-packages $(KICAD_ROOT)/Contents/Frameworks/Python.framework/Versions/Current/bin/python3 $(ROOT)/common/build_fab_outputs.py --layers $(LAYERS) $<
 	#PYTHONPATH="/mnt/c/Program Files/KiCad/lib/python2.7/site-packages" "/mnt/c/Program Files/KiCad/bin/python.exe" $(ROOT)/common/build_fab_outputs.py --layers $(LAYERS) $<
 	cd gerber_tmp && zip ../$(OUTPUT_NAME) *
 	# Build gerber previews using pcb-tools.  If this fails, python3 -m pip install --user pcb-tools; brew install cairo
+	python3 -c "import gerber" || pip install pcb-tools
+	python3 -c "import cairo" || ( brew install cairo pkg-config && pip install pycairo )
 	python3 $(ROOT)/common/build_gerber_previews.py

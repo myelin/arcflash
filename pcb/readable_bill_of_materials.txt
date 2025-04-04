@@ -121,17 +121,17 @@ C1
 - Description: Capacitor 0805: 10u
 - KiCad package: Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder
 
-C12
-- Value: 1u
-- Description: Capacitor 0805: 1u
-- KiCad package: Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder
-
 C6
 - Value: 1u
 - Description: Capacitor 0805: 1u
 - KiCad package: Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder
 
 C7
+- Value: 1u
+- Description: Capacitor 0805: 1u
+- KiCad package: Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder
+
+C12
 - Value: 1u
 - Description: Capacitor 0805: 1u
 - KiCad package: Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.40mm_HandSolder
