@@ -35,7 +35,7 @@ LDFLAGS = -nostdlib
 
 .PHONY: default all build clean
 
-default: build
+default: build program
 
 build: all
 
@@ -73,7 +73,7 @@ cstartup.o: arcflash.pb.h
 
 # nanopb build step
 ../third_party/nanopb/generator/proto/nanopb_pb2.py: ../third_party/nanopb/generator/proto/nanopb.proto
-	cd ../third_party/nanopb/generator/proto; protoc --python_out=. nanopb.proto plugin.proto
+	cd ../third_party/nanopb/generator/proto; protoc --python_out=. nanopb.proto
 
 arcflash.pb arcflash.pb.c arcflash.pb.h ../python_lib/arcflash/arcflash_pb2.py: arcflash.proto ../third_party/nanopb/generator/proto/nanopb_pb2.py
 	protoc -o arcflash.pb --python_out=../python_lib/arcflash $<

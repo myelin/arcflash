@@ -1,17 +1,19 @@
 Nanopb - Protocol Buffers for Embedded Systems
 ==============================================
 
-[![Build Status](https://travis-ci.org/nanopb/nanopb.svg?branch=master)](https://travis-ci.org/nanopb/nanopb)
+![Latest change](https://github.com/nanopb/nanopb/actions/workflows/trigger_on_code_change.yml/badge.svg)
+![Weekly build](https://github.com/nanopb/nanopb/actions/workflows/trigger_on_schedule.yml/badge.svg)
 
 Nanopb is a small code-size Protocol Buffers implementation in ansi C. It is
 especially suitable for use in microcontrollers, but fits any memory
 restricted system.
 
 * **Homepage:** https://jpa.kapsi.fi/nanopb/
+* **Git repository:** https://github.com/nanopb/nanopb/
 * **Documentation:** https://jpa.kapsi.fi/nanopb/docs/
-* **Downloads:** https://jpa.kapsi.fi/nanopb/download/
 * **Forum:** https://groups.google.com/forum/#!forum/nanopb
-
+* **Stable version downloads:** https://jpa.kapsi.fi/nanopb/download/
+* **Pre-release binary packages:** https://github.com/nanopb/nanopb/actions/workflows/binary_packages.yml
 
 
 Using the nanopb library
@@ -27,29 +29,26 @@ However, for any other kind of build system, see the manual steps in
 README.txt in that folder.
 
 
+Generating the headers
+----------------------
+Protocol Buffers messages are defined in a `.proto` file, which follows a standard
+format that is compatible with all Protocol Buffers libraries. To use it with nanopb,
+you need to generate `.pb.c` and `.pb.h` files from it:
 
-Using the Protocol Buffers compiler (protoc)
---------------------------------------------
-The nanopb generator is implemented as a plugin for the Google's own `protoc`
-compiler. This has the advantage that there is no need to reimplement the
-basic parsing of .proto files. However, it does mean that you need the
-Google's protobuf library in order to run the generator.
+    python generator/nanopb_generator.py myprotocol.proto  # For source checkout
+    generator-bin/nanopb_generator myprotocol.proto        # For binary package
 
-If you have downloaded a binary package for nanopb (either Windows, Linux or
-Mac OS X version), the `protoc` binary is included in the 'generator-bin'
-folder. In this case, you are ready to go. Simply run this command:
+(Note: For instructions for nanopb-0.3.9.x and older, see the documentation
+of that particular version [here](https://github.com/nanopb/nanopb/blob/maintenance_0.3/README.md))
 
-    generator-bin/protoc --nanopb_out=. myprotocol.proto
+The binary packages for Windows, Linux and Mac OS X should contain all necessary
+dependencies, including Python, python-protobuf library and protoc. If you are
+using a git checkout or a plain source distribution, you will need to install
+Python separately. Once you have Python, you can install the other dependencies
+with `pip install --upgrade protobuf grpcio-tools`.
 
-However, if you are using a git checkout or a plain source distribution, you
-need to provide your own version of `protoc` and the Google's protobuf library.
-On Linux, the necessary packages are `protobuf-compiler` and `python-protobuf`.
-On Windows, you can either build Google's protobuf library from source or use
-one of the binary distributions of it. In either case, if you use a separate
-`protoc`, you need to manually give the path to nanopb generator:
-
-    protoc --plugin=protoc-gen-nanopb=nanopb/generator/protoc-gen-nanopb ...
-
+You can further customize the header generation by creating an `.options` file.
+See [documentation](https://jpa.kapsi.fi/nanopb/docs/concepts.html#modifying-generator-behaviour) for details.
 
 
 Running the tests
@@ -57,7 +56,8 @@ Running the tests
 If you want to perform further development of the nanopb core, or to verify
 its functionality using your compiler and platform, you'll want to run the
 test suite. The build rules for the test suite are implemented using Scons,
-so you need to have that installed (ex: `sudo apt install scons` on Ubuntu). To run the tests:
+so you need to have that installed (ex: `sudo apt install scons` or `pip install scons`).
+To run the tests:
 
     cd tests
     scons
@@ -67,5 +67,34 @@ end in an error, the test cases were successful.
 
 Note: Mac OS X by default aliases 'clang' as 'gcc', while not actually
 supporting the same command line options as gcc does. To run tests on
-Mac OS X, use: "scons CC=clang CXX=clang". Same way can be used to run
+Mac OS X, use: `scons CC=clang CXX=clang++`. Same way can be used to run
 tests with different compilers on any platform.
+
+For embedded platforms, there is currently support for running the tests
+on STM32 discovery board and [simavr](https://github.com/buserror/simavr)
+AVR simulator. Use `scons PLATFORM=STM32` and `scons PLATFORM=AVR` to run
+these tests.
+
+
+Build systems and integration
+-----------------------------
+Nanopb C code itself is designed to be portable and easy to build
+on any platform. Often the bigger hurdle is running the generator which
+takes in the `.proto` files and outputs `.pb.c` definitions.
+
+There exist build rules for several systems:
+
+* **Makefiles**: `extra/nanopb.mk`, see `examples/simple`
+* **CMake**: `extra/FindNanopb.cmake`, see `examples/cmake`
+* **SCons**: `tests/site_scons` (generator only)
+* **Bazel**: `BUILD.bazel` in source root
+* **Conan**: `conanfile.py` in source root
+* **PlatformIO**: https://platformio.org/lib/show/431/Nanopb
+* **PyPI/pip**: https://pypi.org/project/nanopb/
+* **vcpkg**: https://vcpkg.info/port/nanopb
+
+And also integration to platform interfaces:
+
+* **Arduino**: http://platformio.org/lib/show/1385/nanopb-arduino
+* **Zephyr**: https://docs.zephyrproject.org/latest/services/serialization/nanopb.html
+
