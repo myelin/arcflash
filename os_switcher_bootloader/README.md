@@ -9,7 +9,7 @@ Getting started
 ---------------
 
 Prerequisites:
-- [GNU Arm Embedded Toolchain](https://developer.arm.com/downloads/-/gnu-rm) (GCC 9 dropped ARM2 support though, so you need 9-2019-q3-update)
+- [GNU Arm Embedded Toolchain](https://developer.arm.com/downloads/-/gnu-rm) (GCC 9 dropped ARM2 support though, so you need 8-2019-q3-update)
 - Python 3
 - protobuf (on macOS: brew install protobuf)
 

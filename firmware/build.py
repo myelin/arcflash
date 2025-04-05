@@ -36,7 +36,7 @@ clean_first = os.environ.get("ARCFLASH_CACHE") != "1"
 arduino_cli = os.environ.get("ARDUINO_CLI", "arduino-cli")
 
 # std_args = "--verbose --fqbn arduino:samd:adafruit_circuitplayground_m0"
-std_args = "--verbose --fqbn myelin:samd:arcflash --config-dir ."
+std_args = "--verbose --fqbn myelin:samd:arcflash --config-file arduino-cli.yaml"
 
 # Make sure we have the libxsvf submodule.
 xsvf_path = "../third_party/libxsvf"
