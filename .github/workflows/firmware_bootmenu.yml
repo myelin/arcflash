@@ -6,7 +6,7 @@ jobs:
   build_firmware_bootmenu:
     name: Build firmware and boot menu
     runs-on: ubuntu-latest
-    container: ghcr.io/myelin/arcflash-builder@main
+    container: ghcr.io/myelin/arcflash-builder:main
 
     steps:
       - uses: actions/checkout@v4
