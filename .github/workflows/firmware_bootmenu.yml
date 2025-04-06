@@ -15,8 +15,6 @@ jobs:
 
       - name: Build packages
         run: |
-          cd /github/workspace
-          find .
           ls -al
           make release
 
