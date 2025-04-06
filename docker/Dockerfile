@@ -17,7 +17,7 @@ FROM ubuntu
 WORKDIR /scratch
 
 RUN apt-get update && \
-    apt-get -y install build-essential bzip2 iverilog make protobuf-compiler python3 python3-protobuf wget
+    apt-get -y install build-essential bzip2 git iverilog make protobuf-compiler python3 python3-protobuf wget
 
 # Install ARM tools with GCC 8, to build boot menu.
 RUN wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2019q3/RC1.1/gcc-arm-none-eabi-8-2019-q3-update-linux.tar.bz2 && \

@@ -9,11 +9,6 @@ jobs:
     container: ghcr.io/myelin/arcflash-builder:main
 
     steps:
-      - name: Install git (TODO move to docker image)
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install git
-
       - uses: actions/checkout@v4
         with:
           submodules: recursive
