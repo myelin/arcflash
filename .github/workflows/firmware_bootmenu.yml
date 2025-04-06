@@ -17,6 +17,7 @@ jobs:
         run: |
           cd /github/workspace
           find .
+          ls -al
           make release
 
       - uses: actions/upload-artifact@v4
