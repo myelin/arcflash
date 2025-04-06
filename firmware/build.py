@@ -38,6 +38,11 @@ arduino_cli = os.environ.get("ARDUINO_CLI", "arduino-cli")
 # std_args = "--verbose --fqbn arduino:samd:adafruit_circuitplayground_m0"
 std_args = "--verbose --fqbn myelin:samd:arcflash --config-file arduino-cli.yaml"
 
+if os.environ.get("GITHUB_ACTIONS") == "true":
+    # We're running in a container in a GitHub Action, which will overwrite
+    # $HOME, so we have to manually point arduino-cli at our actual home folder.
+    std_args += " --config-dir /home/arcflash/.arduino15"
+
 # Make sure we have the libxsvf submodule.
 xsvf_path = "../third_party/libxsvf"
 if not os.path.exists(f"{xsvf_path}/libxsvf.h"):
