@@ -40,6 +40,8 @@ default: build program
 build: all
 
 clean:
+	# Work around a bug in proto/Makefile, where it fails if nanopb_pb2.py doesn't exist.
+	touch ../third_party/nanopb/generator/proto/nanopb_pb2.py
 	make -C ../third_party/nanopb/generator/proto clean
 	rm -vf *_boot.bin *.elf *.list *.o *.rom *.pb *.pb.* ../third_party/nanopb/*.o
 
