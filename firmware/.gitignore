@@ -3,6 +3,7 @@ build_*
 lib
 crceconet.c
 checksum.h
+version.h
 
 # Added by arduino-cli when installing the adafruit:samd core.
 /inventory.yaml

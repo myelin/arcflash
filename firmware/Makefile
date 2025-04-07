@@ -7,7 +7,7 @@ release:
 
 # Cached build, for development.
 build:
-	ARCFLASH_CACHE=1 python3 build.py
+	ARCFLASH_CACHE=1 python3 build.py --dev
 
 # Upload the last build.
 upload:

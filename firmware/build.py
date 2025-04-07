@@ -21,6 +21,9 @@ def cmd(s):
     print(s)
     return subprocess.check_call(s, shell=True)
 
+# Build channel -- affects version number.
+channel = "dev" if "--dev" in sys.argv else "release"
+
 here = os.getcwd()
 build_path = os.environ.get('ARCFLASH_BUILD')
 if not build_path:
@@ -68,6 +71,9 @@ for src_dir, dest_dir in [
         if not os.path.exists(dest) or open(dest).read() != content:
             open(dest, "w").write(content)
             print("  %s -> %s" % (src, dest))
+
+# Generate version
+cmd(f"python3 ../python_lib/make_version_id.py {channel} > version.h")
 
 # Build it
 cmd("%s compile %s %s --libraries lib --build-path %s" % (
