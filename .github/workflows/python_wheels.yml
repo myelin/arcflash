@@ -1,11 +1,17 @@
 name: Build python_lib wheels
 
-on: push
+on:
+  workflow_run:
+    workflows: ["Build firmware and boot menu"]
+    types:
+      - completed
 
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-latest, windows-latest]
@@ -14,6 +20,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Download firmware and boot menu binaries
+        uses: actions/download-artifact@v4.1.1
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Copy binaries
+        run: |
+          cp -v firmware-bootmenu/* python_lib/arcflash/
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.23.2

@@ -1,19 +1,31 @@
 name: Build python_lib source
 
-on: push
+on:
+  workflow_run:
+    workflows: ["Build firmware and boot menu"]
+    types:
+      - completed
 
 jobs:
   build_sdist:
     name: Build python_lib source
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      - name: Download firmware and boot menu binaries
+        uses: actions/download-artifact@v4.1.1
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
       - name: Build source
         run: |
+          cp -v firmware-bootmenu/* python_lib/arcflash/
           python3 -m pip install build
           python3 -m build python_lib --sdist
 
