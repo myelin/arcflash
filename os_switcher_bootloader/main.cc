@@ -349,7 +349,7 @@ extern "C" void main_program() {
 
   // Print build date in the top right corner of the screen.
   display_goto(WIDTH - 8 * 12, 8);
-  display_printf("%s", ARCFLASH_BUILD_DATE);
+  display_printf("%s", ARCFLASH_BUILD_VERSION);
 
   display_goto(0, 40);
 

@@ -35,9 +35,11 @@ LDFLAGS = -nostdlib
 
 .PHONY: default all build clean
 
-default: build program
+default: dev_version build program
 
 build: all
+
+release: clean release_version all
 
 clean:
 	# Work around a bug in proto/Makefile, where it fails if nanopb_pb2.py doesn't exist.
@@ -45,10 +47,13 @@ clean:
 	make -C ../third_party/nanopb/generator/proto clean
 	rm -vf *_boot.bin *.elf *.list *.o *.rom *.pb *.pb.* ../third_party/nanopb/*.o
 
-all: version arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootmenu.bin
+all: arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootmenu.bin
 
-version:
-	python3 make_version_h.py > version.h
+dev_version:
+	python3 make_version_h.py dev > version.h
+
+release_version:
+	python3 make_version_h.py release > version.h
 
 main.o: version.h
 

@@ -16,6 +16,8 @@ jobs:
       - name: Build packages
         run: |
           ls -al
+          export GITHUB_REF=${{ github.ref }}
+          export GITHUB_SHA=${{ github.sha }}
           make release
 
       - uses: actions/upload-artifact@v4

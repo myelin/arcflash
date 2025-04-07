@@ -11,7 +11,7 @@ test:
 
 release:
 	make -C host_mcu_comms
-	make -C os_switcher_bootloader clean all
+	make -C os_switcher_bootloader release
 	make -C firmware release
 
 upload:
