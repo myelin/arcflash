@@ -40,5 +40,5 @@ WORKDIR /home/arcflash
 COPY arduino-cli.yaml /scratch
 
 # Install Arduino deps
-RUN arduino-cli core update-index && \
+RUN arduino-cli --config-file /scratch/arduino-cli.yaml core update-index && \
     arduino-cli --config-file /scratch/arduino-cli.yaml core install adafruit:samd
