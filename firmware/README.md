@@ -17,8 +17,8 @@ Run `make upload` to build the code and upload it to a connected Arcflash board.
 If you see "Platform not installed", "Error resolving FQBN", or an error finding a tool like `arm-none-eabi-g++`, update your cores:
 
 ~~~
-arduino-cli core update-index
-arduino-cli --config-dir . core install adafruit:samd
+arduino-cli --config-file arduino-cli.yaml core update-index
+arduino-cli --config-file arduino-cli.yaml core install adafruit:samd
 ~~~
 
 If you see linker errors ("Undefined reference to \`Uart::Uart(SERCOM\*, ...") on Windows, just rerun build_and_upload.py; this just seems to happen sometimes (?!)
