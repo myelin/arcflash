@@ -16,9 +16,15 @@ import sys
 
 import setuptools
 
+# pip removes . from the path, so we need to re-add it to import this.
+sys.path.insert(0, ".")
+import make_version_id
+
 BOSSA = "bossa/src"
 
 setuptools.setup(
+    name="arcflash",
+    version=make_version_id.get_version(),
     ext_modules=[
         setuptools.Extension(
             name="arcflash._bossa",

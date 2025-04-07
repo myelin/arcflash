@@ -50,10 +50,10 @@ clean:
 all: arcflash.rom jump_to_rom.bin ../python_lib/arcflash/bootmenu.bin
 
 dev_version:
-	python3 make_version_h.py dev > version.h
+	python3 ../python_lib/make_version_id.py dev > version.h
 
 release_version:
-	python3 make_version_h.py release > version.h
+	python3 ../python_lib/make_version_id.py  release > version.h
 
 main.o: version.h
 

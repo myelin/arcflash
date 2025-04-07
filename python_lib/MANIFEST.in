@@ -1,3 +1,4 @@
 include arcflash/bootmenu.bin
 include arcflash/cpld.svf
 include arcflash/firmware.bin
+include make_version_id.py
