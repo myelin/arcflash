@@ -342,23 +342,6 @@ uint8_t serial_get_uint8() {
   return (uint8_t)Serial.read();
 }
 
-// // Read a big-endian uint32 from the USB serial port
-// uint32_t serial_get_uint32() {
-//   uint32_t v = (uint32_t)serial_get_uint8() << 24L;
-//   v |= (uint32_t)serial_get_uint8() << 16L;
-//   v |= (uint32_t)serial_get_uint8() << 8L;
-//   v |= (uint32_t)serial_get_uint8();
-//   return v;
-// }
-
-// // Write a big-endian uint32 to the USB serial port
-// void serial_put_uint32(uint32_t v) {
-//   Serial.write((uint8_t)((v & 0xFF000000) >> 24));
-//   Serial.write((uint8_t)((v & 0xFF0000) >> 16));
-//   Serial.write((uint8_t)((v & 0xFF00) >> 8));
-//   Serial.write((uint8_t)(v & 0xFF));
-// }
-
 // Read a little-endian uint32 from the USB serial port
 uint32_t serial_get_uint32() {
   uint32_t v = (uint32_t)serial_get_uint8();
@@ -368,7 +351,7 @@ uint32_t serial_get_uint32() {
   return v;
 }
 
-// Write a big-endian uint32 to the USB serial port
+// Write a little-endian uint32 to the USB serial port
 void serial_put_uint32(uint32_t v) {
   Serial.write((uint8_t)(v & 0xFF));
   Serial.write((uint8_t)((v & 0xFF00) >> 8));
