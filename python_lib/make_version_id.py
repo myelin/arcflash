@@ -4,7 +4,7 @@ import re
 import sys
 
 
-RELEASE_VERSION = "0.2.1"
+RELEASE_VERSION = "0.2.2"
 
 
 def get_version(channel="release"):
@@ -15,7 +15,7 @@ def get_version(channel="release"):
 
     if channel == "release":
         print("Making release version", file=sys.stderr)
-        gh_ref = os.environ.get("GITHUB_TAG")
+        gh_ref = os.environ.get("GITHUB_REF")
         if gh_ref:
             # Tag names override RELEASE_VERSION, although it should
             # always be updated around the same time, so local versions
