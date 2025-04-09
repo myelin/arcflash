@@ -1,5 +1,7 @@
 default: test build
 
+.PHONY: default build test clean release upload
+
 # Local dev build.
 build:
 	make -C os_switcher_bootloader build
@@ -9,6 +11,10 @@ build:
 test:
 	make -C host_mcu_comms test
 	make -C cpld test
+
+clean:
+	make -C os_switcher_bootloader clean
+	make -C firmware clean
 
 # Release build, run on GitHub.
 release:

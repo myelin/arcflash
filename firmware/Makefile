@@ -1,7 +1,10 @@
 default: build upload
 
+clean:
+	rm -rf build_output_*
+
 # Clean build, for releases.
-release:
+release: clean
 	python3 build.py
 	cp firmware.ino.bin ../python_lib/arcflash/firmware.bin
 
