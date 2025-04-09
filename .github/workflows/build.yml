@@ -1,0 +1,106 @@
+name: Build and test Arcflash
+
+on: push
+
+jobs:
+  build_firmware_bootmenu:
+    name: Build firmware and boot menu
+    runs-on: ubuntu-latest
+    container: ghcr.io/myelin/arcflash-builder:main
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build and test
+        run: |
+          ls -al
+          export GITHUB_REF=${{ github.ref }}
+          export GITHUB_SHA=${{ github.sha }}
+          make release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-bootmenu
+          path: |
+            python_lib/arcflash/bootmenu.bin
+            python_lib/arcflash/firmware.bin
+
+  test_cpld:
+    name: Test CPLD
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install iverilog
+          python3 -m pip install cocotb
+
+      - name: Test
+        run: |
+          make -C cpld test
+
+  build_sdist:
+    name: Build Python source tarball
+    runs-on: ubuntu-latest
+    needs: build_firmware_bootmenu
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download firmware and boot menu binaries
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: firmware-bootmenu
+          path: firmware-bootmenu
+
+      - name: Build source
+        run: |
+          cp -v firmware-bootmenu/* python_lib/arcflash/
+          python3 -m pip install build
+          python3 -m build python_lib --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python_lib_src
+          path: python_lib/dist/*.tar.gz
+
+  build_wheels:
+    name: Build Python wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    needs: build_firmware_bootmenu
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download firmware and boot menu binaries
+        uses: actions/download-artifact@v4.1.3
+        with:
+          name: firmware-bootmenu
+          path: firmware-bootmenu
+
+      - name: Copy binaries
+        run: |
+          cp -v firmware-bootmenu/* python_lib/arcflash/
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.23.2
+        with:
+          package-dir: python_lib
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
