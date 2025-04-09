@@ -26,7 +26,8 @@ SIZE = $(TOOLCHAIN_ROOT)/arm-none-eabi-size
 ASFLAGS =
 # c compiler: target ARM2, use 'mov pc, lr' rather than 'bx lr', skip c++
 # exceptions, don't include most of the clib, optimize, include nanopb
-CFLAGS = -std=c++17 -mcpu=arm2 -mno-thumb-interwork -fno-exceptions -ffreestanding -O2 -I../host_mcu_comms -I../third_party/crc32 -I../third_party/nanopb -DPB_FIELD_16BIT -DARCFLASH
+CFLAGS = -Wall -Werror -mcpu=arm2 -mno-thumb-interwork -fno-exceptions -ffreestanding -O2 -I../host_mcu_comms -I../third_party/crc32 -I../third_party/nanopb -DPB_FIELD_16BIT -DARCFLASH
+CCFLAGS = $(CFLAGS) -std=c++17
 # don't include the standard library (which uses 'bx lr' everywhere)
 LDFLAGS = -nostdlib
 # this was in LDFLAGS, but doesn't appear necessary; did I pull in everything
@@ -35,9 +36,11 @@ LDFLAGS = -nostdlib
 
 .PHONY: default all build clean
 
-default: dev_version build program
+default: dev program
 
 build: all
+
+dev: dev_version build
 
 release: clean release_version all
 
@@ -64,7 +67,7 @@ riscos_font.o: ../third_party/riscos/riscos_font.s
 	$(AS) -o $@ $<
 
 %.o: %.cc
-	$(CCC) $(CFLAGS) -c -o $@ $<
+	$(CCC) $(CCFLAGS) -c -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

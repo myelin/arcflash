@@ -15,10 +15,10 @@ void run_tests() {
     uint8_t response_buffer[response_buffer_size];
 
     for (int i = 0; i < 100; ++i) {
-        int packet_size = (i * 500) % buffer_size;
+        size_t packet_size = (i * 500) % buffer_size;
         display_printf("Sending packet %d (%d B)\n", i, packet_size);
         // Fill the test buffer.
-        for (int x = 0; x < packet_size; ++x) {
+        for (size_t x = 0; x < packet_size; ++x) {
             test_buffer[x] = (i + (x * 10)) & 0xFF;
         }
         // Send a ping packet to the MCU.
@@ -73,13 +73,13 @@ void run_tests() {
                     display_printf(
                         "Response %d (%X) received successfully (%d B).\n", i,
                         packet_receiver.packet_type(), packet_receiver.size());
-                    int compare_size = packet_size;
+                    size_t compare_size = packet_size;
                     if (packet_receiver.size() != packet_size) {
                         display_printf("Packet size mismatch\n");
                         compare_size = packet_receiver.size();
                     }
                     bool match = true;
-                    for (int i = 0; i < compare_size; ++i) {
+                    for (size_t i = 0; i < compare_size; ++i) {
                         if (test_buffer[i] != packet_receiver.message()[i])
                             match = false;
                     }

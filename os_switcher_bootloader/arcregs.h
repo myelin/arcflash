@@ -33,7 +33,7 @@
 
 ////////// MEMC REGISTERS //////////
 
-static void write_memc(
+inline void write_memc(
   int os_mode, int sound_dma, int video_dma, int dram_refresh,
   int high_rom_speed, int low_rom_speed, int page_size) {
 

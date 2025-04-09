@@ -18,6 +18,12 @@
 #include "arcflash.h"
 #include <stdarg.h>
 
+size_t strlen(const char* s) {
+  size_t len = 0;
+  while (*s++) ++len;
+  return len;
+}
+
 void display_printf(char const *format, ...) {
   va_list ap;
   va_start(ap, format);

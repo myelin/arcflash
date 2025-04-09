@@ -92,13 +92,13 @@ char hex_digit(int v) {
 
 void display_print_hex(uint32_t v) {
 	char s[9];
-	int digits = 1;
-	while (digits < 8 && v > (1 << (digits * 4))) {
+	uint32_t digits = 1;
+	while (digits < 8 && v > (1UL << (digits * 4))) {
 		++digits;
 	}
 	uint32_t shift = (digits - 1) * 4;
 	uint32_t mask = 15 << shift;
-	for (int i = 0; i < digits; ++i) {
+	for (uint32_t i = 0; i < digits; ++i) {
 		s[i] = hex_digit((v & mask) >> shift);
 		mask >>= 4;
 		shift -= 4;

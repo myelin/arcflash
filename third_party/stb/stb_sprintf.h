@@ -517,8 +517,8 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          stbsp__uint64 n64;
 #ifndef STB_SPRINTF_NOFLOAT
          double fv;
-#endif
          stbsp__int32 dp;
+#endif
          char const *sn;
 
       case 's':
@@ -560,7 +560,9 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          lead[0] = 0;
          tail[0] = 0;
          pr = 0;
+#ifndef STB_SPRINTF_NOFLOAT
          dp = 0;
+#endif
          cs = 0;
          // copy the string in
          goto scopy;
@@ -573,7 +575,9 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          lead[0] = 0;
          tail[0] = 0;
          pr = 0;
+#ifndef STB_SPRINTF_NOFLOAT
          dp = 0;
+#endif
          cs = 0;
          goto scopy;
 
@@ -597,7 +601,9 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          lead[0] = 0;
          tail[0] = 0;
          pr = 0;
+#ifndef STB_SPRINTF_NOFLOAT
          dp = 0;
+#endif
          cs = 0;
          goto scopy;
 #else
@@ -986,7 +992,9 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
             n64 = va_arg(va, stbsp__uint32);
 
          s = num + STBSP__NUMSZ;
+#ifndef STB_SPRINTF_NOFLOAT
          dp = 0;
+#endif
          // clear tail, and clear leading if value is zero
          tail[0] = 0;
          if (n64 == 0) {
@@ -1302,7 +1310,9 @@ STBSP__PUBLICDEF int STB_SPRINTF_DECORATE(vsprintfcb)(STBSP_SPRINTFCB *callback,
          lead[0] = 0;
          tail[0] = 0;
          pr = 0;
+#ifndef STB_SPRINTF_NOFLOAT
          dp = 0;
+#endif
          cs = 0;
          goto scopy;
       }

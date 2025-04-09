@@ -193,7 +193,7 @@ void timer_poll() {
     }
 }
 
-void delay(int ms) {
+void delay(uint32_t ms) {
   uint32_t start = millis();
   while ((millis() - start) < ms) {
     timer_poll();
@@ -348,7 +348,7 @@ extern "C" void main_program() {
   }
 
   // Print build date in the top right corner of the screen.
-  display_goto(WIDTH - 8 * 12, 8);
+  display_goto(WIDTH - (strlen(ARCFLASH_BUILD_VERSION) + 4) * 8, 8);
   display_printf("%s", ARCFLASH_BUILD_VERSION);
 
   display_goto(0, 40);
