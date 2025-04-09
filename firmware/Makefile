@@ -8,6 +8,7 @@ release:
 # Cached build, for development.
 build:
 	ARCFLASH_CACHE=1 python3 build.py --dev
+	cp firmware.ino.bin ../python_lib/arcflash/firmware.bin
 
 # Upload the last build.
 upload:
