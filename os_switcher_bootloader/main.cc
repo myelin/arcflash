@@ -318,6 +318,16 @@ void keyboard_mousemove(int mouse_dx, int mouse_dy) {
   *SCREEN_ADDR(mouse_x, mouse_y) = WHITE;
 }
 
+void dump_cmos() {
+	uint8_t data[256];
+	read_cmos(data);
+	display_printf("CMOS: ");
+	for (int i = 0; i < 256; ++i) {
+		display_printf("%02x", data[i]);
+	}
+	display_printf("\n");
+}
+
 extern "C" void main_program() {
   // set border color: 40:8 X:11 supreme:1 blue:4 green:4 red:4
   // VIDCR = 0x40001FFFL;  // white
@@ -353,7 +363,7 @@ extern "C" void main_program() {
 
   display_goto(0, 40);
 
-  read_cmos();
+  dump_cmos();
 
   parse_descriptor_and_print_menu(ARC_ROM_BASE, &descriptor);
 

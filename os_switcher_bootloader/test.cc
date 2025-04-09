@@ -4,9 +4,53 @@
 // Just print bytes received from the serial channel (for debugging with Arculator).
 // #define SERIAL_JUST_PRINT
 
-void run_tests() {
-    display_printf("Running Arcflash tests...\n");
+void test_cmos_rw() {
+    display_printf("Testing reading and writing CMOS.\n");
 
+    uint8_t initial_data[256];
+    read_cmos(initial_data);
+
+    uint8_t expected_data[256];
+    read_cmos(expected_data);
+
+    // We don't have rand(), so just write sequential numbers.
+    uint8_t counter = 1;
+
+    bool fail = false;
+
+    for (int addr = 16; addr < 256; ++addr) {
+        display_printf("Testing from addr %d...\n", addr);
+        for (int bytes_to_write = 1; bytes_to_write <= 256 - addr; ++bytes_to_write) {
+            // Generate test data
+            for (int pos = addr; pos < addr + bytes_to_write; ++pos) {
+                expected_data[pos] = counter++;
+            }
+            // Write it
+            write_cmos(addr, bytes_to_write, expected_data + addr);
+            // Read back
+            uint8_t data[256];
+            read_cmos(data);
+            // Compare
+            bool diff = false;
+            for (int i = 16; i < 256; ++i) {
+                if (data[i] != expected_data[i]) {
+                    diff = true;
+                }
+            }
+            if (diff) fail = true;
+            display_printf("%sWrote %d bytes from %d, %s\n",
+                fail ? "FAIL " : "",
+                bytes_to_write, addr, diff ? "MISMATCH" : "match");
+
+            // for (int i = 16; i < 256; ++i) {
+            //     display_printf(" %02X", data[i]);
+            // }
+            // display_printf("\n");
+        }
+    }
+}
+
+void test_mcu_comms() {
     display_printf("Testing communications with the MCU.\n");
 
     const int buffer_size = 8000;
@@ -92,4 +136,12 @@ void run_tests() {
         }
 #endif
     }
+}
+
+
+void run_tests() {
+    display_printf("Running Arcflash tests...\n");
+
+    test_cmos_rw();
+    test_mcu_comms();
 }

@@ -106,7 +106,7 @@ static uint8_t cmos_send(uint8_t byte) {
 	return cmos_read_bit();  // Acknowledge
 }
 
-static uint8_t cmos_receive(uint8_t should_ack) {
+static uint8_t cmos_receive(bool should_ack) {
 	// MSB-first; clock in 8 bits then send ack (or not)
 	uint8_t byte = 0;
 	for (int i = 0; i < 8; ++i) {
@@ -116,7 +116,7 @@ static uint8_t cmos_receive(uint8_t should_ack) {
 	return byte;
 }
 
-void read_cmos() {
+void read_cmos(uint8_t* data) {
 	// To read the device, we need to do an initial write to set the register address
 	cmos_start();     // First start
 	cmos_send(0xa0);  // Write
@@ -124,23 +124,30 @@ void read_cmos() {
 
 	cmos_start();     // Second start, for reading
 	cmos_send(0xa1);  // Read from device with A0=0
-	uint8_t data[256];
 	for (int i = 0; i < 256; ++i) {
-		data[i] = cmos_receive((i == 255) ? 0 : 1);  // Ack all but last byte
+		data[i] = cmos_receive(i != 255);  // Ack all but last byte
 	}
 	cmos_stop();
-
-	display_printf("CMOS: ");
-	for (int i = 0; i < 256; ++i) {
-		display_printf("%02x", data[i]);
-	}
-	display_printf("\n");
 }
 
-void write_cmos() {
+/* Write a block of data to the CMOS chip.
+ *
+ * addr: Address in the chip to write to:
+ * 		 0 = control register
+ *       1-6 = clock
+ *       7 = timer
+ *       8 = alarm control
+ *       9-15 = alarms
+ *       16-255 = 240 byte CMOS data
+ * len: How many bytes to write.
+ * data: Data to write.
+ */
+void write_cmos(uint8_t addr, uint8_t len, const uint8_t* data) {
 	cmos_start();
 	cmos_send(0xa0);  // Write to device with A0=0
-	cmos_send(0);
-	// TODO
+	cmos_send(addr);
+	for (uint8_t i = 0; i < len; ++i) {
+		cmos_send(data[i]);
+	}
 	cmos_stop();
 }

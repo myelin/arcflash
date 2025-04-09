@@ -36,7 +36,8 @@ inline uint32_t millis() { return _millis; }
 extern uint32_t read_serial_byte();
 
 // cmos.cc
-extern void read_cmos();
+extern void read_cmos(uint8_t* data);
+extern void write_cmos(uint8_t addr, uint8_t len, const uint8_t* data);
 
 // descriptor.cc
 extern void parse_descriptor_and_print_menu(uint32_t rom_base, arcflash_FlashDescriptor* desc);
