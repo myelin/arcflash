@@ -4,7 +4,7 @@ import re
 import sys
 
 
-RELEASE_VERSION = "0.2.0"
+RELEASE_VERSION = "0.2.1"
 
 
 def get_version(channel="release"):
