@@ -226,7 +226,28 @@ void loop() {
   }
 }
 
+void dump_cmos() {
+	uint8_t data[256];
+	read_cmos(data);
+	display_printf("CMOS: ");
+	for (int i = 0; i < 256; ++i) {
+		display_printf("%02x", data[i]);
+	}
+	display_printf("\n");
+}
+
 void keyboard_keydown(uint8_t keycode) {
+  if (keycode == KEY_F1) {
+    dump_cmos();
+    return;
+  }
+
+  if (keycode == KEY_F9) {
+    // Test mode!
+    run_tests();
+    return;
+  }
+
   char c = 0;
   switch (keycode) {
     case KEY_1: c = '1'; break;
@@ -296,12 +317,6 @@ void keyboard_keydown(uint8_t keycode) {
       delay(500);
     }
   }
-
-  if (c == 'T') {
-    // Test mode!
-    run_tests();
-    return;
-  }
 }
 
 void keyboard_keyup(uint8_t keycode) {
@@ -316,16 +331,6 @@ void keyboard_mousemove(int mouse_dx, int mouse_dy) {
   if (mouse_y < 0) mouse_y = 0;
   if (mouse_y >= HEIGHT) mouse_y = HEIGHT - 1;
   *SCREEN_ADDR(mouse_x, mouse_y) = WHITE;
-}
-
-void dump_cmos() {
-	uint8_t data[256];
-	read_cmos(data);
-	display_printf("CMOS: ");
-	for (int i = 0; i < 256; ++i) {
-		display_printf("%02x", data[i]);
-	}
-	display_printf("\n");
 }
 
 extern "C" void main_program() {
@@ -362,8 +367,6 @@ extern "C" void main_program() {
   display_printf("%s", ARCFLASH_BUILD_VERSION);
 
   display_goto(0, 40);
-
-  dump_cmos();
 
   parse_descriptor_and_print_menu(ARC_ROM_BASE, &descriptor);
 
